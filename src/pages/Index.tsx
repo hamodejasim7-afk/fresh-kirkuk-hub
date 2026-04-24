@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/sheet";
 import {
   ShoppingCart, Plus, Minus, Trash2, Phone, MapPin, User,
-  Instagram, Facebook, LogIn, LayoutDashboard, Truck,
+  Instagram, Facebook, LogIn, LayoutDashboard, Truck, Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 import freshLogo from "@/assets/fresh-logo.png";
@@ -19,6 +19,7 @@ import { PRODUCTS, type Category } from "@/data/products";
 import { formatIQD } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
 
 type CartItem = (typeof PRODUCTS)[number] & { qty: number };
 type Cat = "الكل" | Category;
@@ -27,6 +28,7 @@ const CATEGORIES: Cat[] = ["الكل", "خضار وفواكه", "لحوم", "أ�
 
 const Index = () => {
   const { user, role, signOut } = useAuth();
+  const { settings: storeSettings } = useStoreSettings();
   const [activeCat, setActiveCat] = useState<Cat>("الكل");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
@@ -69,6 +71,10 @@ const Index = () => {
   const removeItem = (id: string) => setCart((prev) => prev.filter((i) => i.id !== id));
 
   const submitOrder = async () => {
+    if (!storeSettings.is_open) {
+      toast.error("المتجر مغلق حالياً، لا يمكن استلام الطلبات");
+      return;
+    }
     if (!customer.name.trim() || !customer.phone.trim() || !customer.address.trim()) {
       toast.error("يرجى تعبئة الاسم ورقم الهاتف والعنوان");
       return;
@@ -113,7 +119,12 @@ const Index = () => {
       setCartOpen(false);
     } catch (err: any) {
       console.error(err);
-      toast.error("فشل إرسال الطلب: " + (err?.message ?? "خطأ غير معروف"));
+      const msg = String(err?.message ?? "");
+      if (msg.includes("STORE_CLOSED")) {
+        toast.error("المتجر مغلق حالياً");
+      } else {
+        toast.error("فشل إرسال الطلب: " + (msg || "خطأ غير معروف"));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -224,8 +235,17 @@ const Index = () => {
                       <span className="font-semibold">المجموع:</span>
                       <span className="font-bold text-primary">{formatIQD(totalPrice)}</span>
                     </div>
-                    <Button onClick={submitOrder} size="lg" className="w-full" disabled={submitting}>
-                      {submitting ? "جاري الإرسال..." : "تأكيد الطلب"}
+                    <Button
+                      onClick={submitOrder}
+                      size="lg"
+                      className="w-full"
+                      disabled={submitting || !storeSettings.is_open}
+                    >
+                      {!storeSettings.is_open
+                        ? "المتجر مغلق حالياً"
+                        : submitting
+                        ? "جاري الإرسال..."
+                        : "تأكيد الطلب"}
                     </Button>
                   </SheetFooter>
                 )}
@@ -234,6 +254,18 @@ const Index = () => {
           </div>
         </div>
       </header>
+
+      {/* Store closed banner */}
+      {!storeSettings.is_open && (
+        <div className="bg-destructive text-destructive-foreground">
+          <div className="container mx-auto flex items-center justify-center gap-3 px-4 py-3 text-center">
+            <Clock className="h-5 w-5 flex-shrink-0 animate-pulse" />
+            <p className="text-sm font-semibold sm:text-base">
+              {storeSettings.closed_message}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Hero */}
       <section className="relative overflow-hidden border-b" style={{ background: "var(--gradient-soft)" }}>
