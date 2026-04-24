@@ -367,6 +367,9 @@ const Admin = () => {
           <StatCard icon={<Package />} label="إجمالي نشط" value={formatIQD(stats.all)} sub={`${stats.allCount} طلب`} />
         </div>
 
+        {/* Store open/closed control */}
+        <StoreStatusCard />
+
         {/* WhatsApp / notifications settings */}
         <Card className="p-4 print:hidden">
           <h3 className="font-semibold mb-3 flex items-center gap-2">
