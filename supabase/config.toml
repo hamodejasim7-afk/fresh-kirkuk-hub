@@ -1,1 +1,7 @@
 project_id = "loiuqxeurkzejvivlrpa"
+
+[functions.create-staff]
+verify_jwt = false
+
+[functions.delete-staff]
+verify_jwt = false
