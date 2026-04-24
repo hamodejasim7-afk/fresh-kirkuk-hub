@@ -83,7 +83,49 @@ const Admin = () => {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const loadData = async () => {
+  // Store WhatsApp settings (saved per-browser)
+  const [storePhone, setStorePhone] = useState<string>(() => localStorage.getItem("fresh_store_phone") ?? "");
+  const [autoSend, setAutoSend] = useState<boolean>(() => localStorage.getItem("fresh_auto_wa") === "1");
+  const [soundOn, setSoundOn] = useState<boolean>(() => localStorage.getItem("fresh_sound") !== "0");
+  const knownIdsRef = useRef<Set<string>>(new Set());
+  const initializedRef = useRef(false);
+
+  useEffect(() => { localStorage.setItem("fresh_store_phone", storePhone); }, [storePhone]);
+  useEffect(() => { localStorage.setItem("fresh_auto_wa", autoSend ? "1" : "0"); }, [autoSend]);
+  useEffect(() => { localStorage.setItem("fresh_sound", soundOn ? "1" : "0"); }, [soundOn]);
+
+  const playBeep = () => {
+    if (!soundOn) return;
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "sine";
+      o.frequency.value = 880;
+      o.connect(g);
+      g.connect(ctx.destination);
+      g.gain.setValueAtTime(0.0001, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
+      o.start();
+      o.stop(ctx.currentTime + 0.5);
+    } catch {}
+  };
+
+  const sendOrderToWhatsApp = (orderId: string) => {
+    const order = orders.find((o) => o.id === orderId);
+    if (!order) {
+      toast.error("الطلب غير موجود بعد، أعد المحاولة");
+      return;
+    }
+    if (!storePhone.trim()) {
+      toast.error("أدخل رقم المتجر في الإعدادات أولاً");
+      return;
+    }
+    const text = buildOrderWhatsAppText(order, items[orderId] ?? []);
+    const url = buildWhatsAppLink(storePhone, text);
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
     setLoading(true);
 
     // Active orders only (not archived)
