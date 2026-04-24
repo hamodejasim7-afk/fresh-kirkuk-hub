@@ -26,10 +26,13 @@ import { formatIQD } from "@/lib/format";
 import { toast } from "sonner";
 import {
   Printer, RotateCcw, Calendar, TrendingUp, Users, Package, LogOut, ArrowRight, UserPlus,
-  MessageCircle, Settings, Bell, BellOff,
+  MessageCircle, Settings, Bell, BellOff, Store, PowerOff,
 } from "lucide-react";
 import freshLogo from "@/assets/fresh-logo.png";
 import { buildOrderWhatsAppText, buildWhatsAppLink } from "@/lib/whatsapp";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
 
 interface Order {
   id: string;
