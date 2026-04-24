@@ -62,6 +62,13 @@ interface Driver {
   phone: string | null;
 }
 
+interface Staff {
+  id: string;
+  full_name: string | null;
+  phone: string | null;
+  roles: ("admin" | "driver")[];
+}
+
 const STATUS_LABEL: Record<string, string> = {
   new: "جديد",
   assigned: "معين لسائق",
@@ -83,6 +90,7 @@ const Admin = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [items, setItems] = useState<Record<string, OrderItem[]>>({});
   const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Store WhatsApp settings (saved per-browser)
@@ -187,19 +195,38 @@ const Admin = () => {
       }
     }
 
-    // Drivers
+    // All staff (admins + drivers)
     const { data: rolesData } = await supabase
       .from("user_roles")
-      .select("user_id")
-      .eq("role", "driver");
-    const driverIds = (rolesData ?? []).map((r) => r.user_id);
-    if (driverIds.length > 0) {
+      .select("user_id, role");
+    const rolesByUser = new Map<string, ("admin" | "driver")[]>();
+    (rolesData ?? []).forEach((r) => {
+      const arr = rolesByUser.get(r.user_id) ?? [];
+      arr.push(r.role as "admin" | "driver");
+      rolesByUser.set(r.user_id, arr);
+    });
+    const allIds = Array.from(rolesByUser.keys());
+
+    if (allIds.length > 0) {
       const { data: profs } = await supabase
         .from("profiles")
         .select("id, full_name, phone")
-        .in("id", driverIds);
-      setDrivers(profs ?? []);
+        .in("id", allIds);
+      const profMap = new Map((profs ?? []).map((p) => [p.id, p]));
+      const staffList: Staff[] = allIds.map((id) => ({
+        id,
+        full_name: profMap.get(id)?.full_name ?? null,
+        phone: profMap.get(id)?.phone ?? null,
+        roles: rolesByUser.get(id) ?? [],
+      }));
+      setStaff(staffList);
+      setDrivers(
+        staffList
+          .filter((s) => s.roles.includes("driver"))
+          .map((s) => ({ id: s.id, full_name: s.full_name, phone: s.phone })),
+      );
     } else {
+      setStaff([]);
       setDrivers([]);
     }
 
@@ -416,6 +443,7 @@ const Admin = () => {
         <Tabs defaultValue="orders">
           <TabsList className="print:hidden">
             <TabsTrigger value="orders">الطلبات ({orders.length})</TabsTrigger>
+            <TabsTrigger value="staff">الموظفون ({staff.length})</TabsTrigger>
             <TabsTrigger value="drivers">السواق ({drivers.length})</TabsTrigger>
           </TabsList>
 
@@ -523,6 +551,10 @@ const Admin = () => {
                 </Table>
               </div>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="staff" className="mt-4">
+            <StaffPanel staff={staff} reload={loadData} currentUserId={user?.id ?? ""} />
           </TabsContent>
 
           <TabsContent value="drivers" className="mt-4">
@@ -650,6 +682,230 @@ const GrantRoleForm = ({ onDone }: { onDone: () => void }) => {
       </div>
       <Button type="submit" disabled={busy}>{busy ? "..." : "منح الصلاحية"}</Button>
     </form>
+  );
+};
+
+const StaffPanel = ({
+  staff,
+  reload,
+  currentUserId,
+}: {
+  staff: Staff[];
+  reload: () => void;
+  currentUserId: string;
+}) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [role, setRole] = useState<"driver" | "admin">("driver");
+  const [busy, setBusy] = useState(false);
+
+  const createStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !password.trim()) {
+      toast.error("الإيميل وكلمة السر مطلوبان");
+      return;
+    }
+    if (password.length < 6) {
+      toast.error("كلمة السر يجب أن تكون 6 أحرف فأكثر");
+      return;
+    }
+    setBusy(true);
+    const { data, error } = await supabase.functions.invoke("create-staff", {
+      body: {
+        email: email.trim(),
+        password,
+        full_name: fullName.trim(),
+        phone: phone.trim(),
+        role,
+      },
+    });
+    setBusy(false);
+    if (error || (data as any)?.error) {
+      toast.error((data as any)?.error ?? error?.message ?? "فشل إنشاء الحساب");
+      return;
+    }
+    toast.success(`تم إنشاء حساب ${role === "admin" ? "المدير" : "السائق"} بنجاح`);
+    setEmail("");
+    setPassword("");
+    setFullName("");
+    setPhone("");
+    reload();
+  };
+
+  const removeStaff = async (id: string) => {
+    setBusy(true);
+    const { data, error } = await supabase.functions.invoke("delete-staff", {
+      body: { user_id: id },
+    });
+    setBusy(false);
+    if (error || (data as any)?.error) {
+      toast.error((data as any)?.error ?? error?.message ?? "فشل الحذف");
+      return;
+    }
+    toast.success("تم حذف الموظف");
+    reload();
+  };
+
+  const generatePassword = () => {
+    const chars = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let p = "";
+    for (let i = 0; i < 10; i++) p += chars[Math.floor(Math.random() * chars.length)];
+    setPassword(p);
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card className="p-4">
+        <h3 className="font-semibold mb-3 flex items-center gap-2">
+          <UserPlus className="h-4 w-4" />إضافة موظف جديد (إنشاء حساب كامل)
+        </h3>
+        <form onSubmit={createStaff} className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1">
+            <Label htmlFor="staff-name">الاسم الكامل</Label>
+            <Input
+              id="staff-name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="اسم الموظف"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="staff-phone">رقم الهاتف</Label>
+            <Input
+              id="staff-phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="07XX XXX XXXX"
+              dir="ltr"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="staff-email">الإيميل *</Label>
+            <Input
+              id="staff-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="staff@example.com"
+              dir="ltr"
+              required
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="staff-password">كلمة السر المؤقتة *</Label>
+            <div className="flex gap-2">
+              <Input
+                id="staff-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="6 أحرف على الأقل"
+                dir="ltr"
+                required
+              />
+              <Button type="button" variant="outline" onClick={generatePassword}>
+                توليد
+              </Button>
+            </div>
+          </div>
+          <div className="space-y-1">
+            <Label>الدور *</Label>
+            <Select value={role} onValueChange={(v) => setRole(v as "driver" | "admin")}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="driver">سائق توصيل</SelectItem>
+                <SelectItem value="admin">مدير</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-end">
+            <Button type="submit" disabled={busy} className="w-full gap-2">
+              <UserPlus className="h-4 w-4" />
+              {busy ? "جاري الإنشاء..." : "إنشاء الحساب"}
+            </Button>
+          </div>
+        </form>
+        <p className="text-xs text-muted-foreground mt-3">
+          💡 شارك الإيميل وكلمة السر مع الموظف ليدخل من صفحة الدخول. ينصح بتغيير كلمة السر بعد أول دخول.
+        </p>
+      </Card>
+
+      <Card className="overflow-hidden">
+        <div className="p-4 border-b flex items-center gap-2">
+          <Users className="h-4 w-4" />
+          <h3 className="font-semibold">جميع الموظفين ({staff.length})</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-right">الاسم</TableHead>
+                <TableHead className="text-right">الهاتف</TableHead>
+                <TableHead className="text-right">الأدوار</TableHead>
+                <TableHead className="text-right">إجراءات</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {staff.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
+                    لا يوجد موظفون بعد
+                  </TableCell>
+                </TableRow>
+              ) : (
+                staff.map((s) => (
+                  <TableRow key={s.id}>
+                    <TableCell className="font-medium">{s.full_name || "—"}</TableCell>
+                    <TableCell dir="ltr" className="text-right">{s.phone || "—"}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-1 flex-wrap">
+                        {s.roles.map((r) => (
+                          <Badge key={r} variant={r === "admin" ? "default" : "secondary"}>
+                            {r === "admin" ? "مدير" : "سائق"}
+                          </Badge>
+                        ))}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {s.id === currentUserId ? (
+                        <span className="text-xs text-muted-foreground">(أنت)</span>
+                      ) : (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="destructive" disabled={busy}>
+                              حذف
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent dir="rtl">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>تأكيد حذف الموظف</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                سيتم حذف حساب {s.full_name || "هذا الموظف"} نهائياً ولن يستطيع الدخول للنظام.
+                                إذا كان سائقاً، ستُلغى ربط طلباته الحالية.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => removeStaff(s.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                نعم، احذف
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </Card>
+    </div>
   );
 };
 
