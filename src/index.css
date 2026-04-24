@@ -34,6 +34,10 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
+    /* WhatsApp brand */
+    --whatsapp: 142 70% 38%;
+    --whatsapp-foreground: 0 0% 100%;
+
     --border: 30 20% 88%;
     --input: 30 20% 88%;
     --ring: 22 95% 54%;

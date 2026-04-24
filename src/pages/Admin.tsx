@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -26,8 +26,10 @@ import { formatIQD } from "@/lib/format";
 import { toast } from "sonner";
 import {
   Printer, RotateCcw, Calendar, TrendingUp, Users, Package, LogOut, ArrowRight, UserPlus,
+  MessageCircle, Settings, Bell, BellOff,
 } from "lucide-react";
 import freshLogo from "@/assets/fresh-logo.png";
+import { buildOrderWhatsAppText, buildWhatsAppLink } from "@/lib/whatsapp";
 
 interface Order {
   id: string;
@@ -40,6 +42,7 @@ interface Order {
   driver_id: string | null;
   archived_at: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 interface OrderItem {
@@ -50,6 +53,7 @@ interface OrderItem {
   unit: string | null;
   price_iqd: number;
   quantity: number;
+  created_at: string;
 }
 
 interface Driver {
@@ -80,6 +84,50 @@ const Admin = () => {
   const [items, setItems] = useState<Record<string, OrderItem[]>>({});
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Store WhatsApp settings (saved per-browser)
+  const [storePhone, setStorePhone] = useState<string>(() => localStorage.getItem("fresh_store_phone") ?? "");
+  const [autoSend, setAutoSend] = useState<boolean>(() => localStorage.getItem("fresh_auto_wa") === "1");
+  const [soundOn, setSoundOn] = useState<boolean>(() => localStorage.getItem("fresh_sound") !== "0");
+  const knownIdsRef = useRef<Set<string>>(new Set());
+  const initializedRef = useRef(false);
+
+  useEffect(() => { localStorage.setItem("fresh_store_phone", storePhone); }, [storePhone]);
+  useEffect(() => { localStorage.setItem("fresh_auto_wa", autoSend ? "1" : "0"); }, [autoSend]);
+  useEffect(() => { localStorage.setItem("fresh_sound", soundOn ? "1" : "0"); }, [soundOn]);
+
+  const playBeep = () => {
+    if (!soundOn) return;
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "sine";
+      o.frequency.value = 880;
+      o.connect(g);
+      g.connect(ctx.destination);
+      g.gain.setValueAtTime(0.0001, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
+      o.start();
+      o.stop(ctx.currentTime + 0.5);
+    } catch {}
+  };
+
+  const sendOrderToWhatsApp = (orderId: string) => {
+    const order = orders.find((o) => o.id === orderId);
+    if (!order) {
+      toast.error("الطلب غير موجود بعد، أعد المحاولة");
+      return;
+    }
+    if (!storePhone.trim()) {
+      toast.error("أدخل رقم المتجر في الإعدادات أولاً");
+      return;
+    }
+    const text = buildOrderWhatsAppText(order, items[orderId] ?? []);
+    const url = buildWhatsAppLink(storePhone, text);
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -148,6 +196,35 @@ const Admin = () => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Detect newly arrived orders → beep + auto-open WhatsApp
+  useEffect(() => {
+    if (orders.length === 0) return;
+    const currentIds = new Set(orders.map((o) => o.id));
+
+    if (!initializedRef.current) {
+      knownIdsRef.current = currentIds;
+      initializedRef.current = true;
+      return;
+    }
+
+    const newOnes = orders.filter((o) => !knownIdsRef.current.has(o.id));
+    if (newOnes.length > 0) {
+      playBeep();
+      toast.success(`وصل ${newOnes.length} طلب جديد!`);
+      if (autoSend && storePhone.trim()) {
+        // Wait briefly so order_items load too
+        setTimeout(() => {
+          newOnes.forEach((o) => {
+            const text = buildOrderWhatsAppText(o, items[o.id] ?? []);
+            window.open(buildWhatsAppLink(storePhone, text), "_blank", "noopener,noreferrer");
+          });
+        }, 600);
+      }
+    }
+    knownIdsRef.current = currentIds;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders]);
 
   const updateStatus = async (id: string, status: string) => {
     const { error } = await supabase.from("orders").update({ status }).eq("id", id);
@@ -234,6 +311,51 @@ const Admin = () => {
           <StatCard icon={<Package />} label="إجمالي نشط" value={formatIQD(stats.all)} sub={`${stats.allCount} طلب`} />
         </div>
 
+        {/* WhatsApp / notifications settings */}
+        <Card className="p-4 print:hidden">
+          <h3 className="font-semibold mb-3 flex items-center gap-2">
+            <Settings className="h-4 w-4" />إعدادات الإشعارات والواتساب
+          </h3>
+          <div className="grid gap-3 md:grid-cols-3 items-end">
+            <div className="space-y-1">
+              <Label htmlFor="store-phone">رقم واتساب المتجر</Label>
+              <Input
+                id="store-phone"
+                value={storePhone}
+                onChange={(e) => setStorePhone(e.target.value)}
+                placeholder="07XX XXX XXXX"
+                dir="ltr"
+              />
+              <p className="text-xs text-muted-foreground">عراقي: يكفي 07XXXXXXXXX</p>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={autoSend}
+                onChange={(e) => setAutoSend(e.target.checked)}
+                className="h-4 w-4 accent-primary"
+              />
+              <span className="text-sm">فتح واتساب تلقائياً عند كل طلب جديد</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={soundOn}
+                onChange={(e) => setSoundOn(e.target.checked)}
+                className="h-4 w-4 accent-primary"
+              />
+              <span className="text-sm flex items-center gap-1">
+                {soundOn ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+                صوت تنبيه عند الطلب الجديد
+              </span>
+            </label>
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            💡 الإرسال يفتح واتساب ويب/التطبيق برسالة جاهزة فيها كل تفاصيل الطلب — مجاني تماماً.
+            للفتح التلقائي اسمح للمتصفح بفتح النوافذ المنبثقة لهذا الموقع.
+          </p>
+        </Card>
+
         {/* Action bar */}
         <div className="flex flex-wrap items-center gap-2 print:hidden">
           <Button onClick={printReport} variant="outline" className="gap-2">
@@ -286,13 +408,14 @@ const Admin = () => {
                       <TableHead className="text-right">الحالة</TableHead>
                       <TableHead className="text-right print:hidden">السائق</TableHead>
                       <TableHead className="text-right print:hidden">إجراءات</TableHead>
+                      <TableHead className="text-right print:hidden">واتساب</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {loading ? (
-                      <TableRow><TableCell colSpan={9} className="text-center py-8">جاري التحميل...</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={10} className="text-center py-8">جاري التحميل...</TableCell></TableRow>
                     ) : orders.length === 0 ? (
-                      <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">لا توجد طلبات نشطة</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">لا توجد طلبات نشطة</TableCell></TableRow>
                     ) : (
                       orders.map((o) => (
                         <TableRow key={o.id}>
@@ -356,6 +479,16 @@ const Admin = () => {
                                 ))}
                               </SelectContent>
                             </Select>
+                          </TableCell>
+                          <TableCell className="print:hidden">
+                            <Button
+                              size="sm"
+                              onClick={() => sendOrderToWhatsApp(o.id)}
+                              className="gap-1 bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp/90"
+                              title="إرسال الطلب إلى رقم المتجر على واتساب"
+                            >
+                              <MessageCircle className="h-4 w-4" />إرسال
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))
