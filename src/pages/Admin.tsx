@@ -443,6 +443,7 @@ const Admin = () => {
         <Tabs defaultValue="orders">
           <TabsList className="print:hidden">
             <TabsTrigger value="orders">الطلبات ({orders.length})</TabsTrigger>
+            <TabsTrigger value="staff">الموظفون ({staff.length})</TabsTrigger>
             <TabsTrigger value="drivers">السواق ({drivers.length})</TabsTrigger>
           </TabsList>
 
