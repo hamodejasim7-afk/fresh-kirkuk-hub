@@ -119,7 +119,12 @@ const Index = () => {
       setCartOpen(false);
     } catch (err: any) {
       console.error(err);
-      toast.error("فشل إرسال الطلب: " + (err?.message ?? "خطأ غير معروف"));
+      const msg = String(err?.message ?? "");
+      if (msg.includes("STORE_CLOSED")) {
+        toast.error("المتجر مغلق حالياً");
+      } else {
+        toast.error("فشل إرسال الطلب: " + (msg || "خطأ غير معروف"));
+      }
     } finally {
       setSubmitting(false);
     }
