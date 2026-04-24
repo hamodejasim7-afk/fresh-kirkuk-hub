@@ -100,17 +100,43 @@ const Admin = () => {
     if (!soundOn) return;
     try {
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = "sine";
-      o.frequency.value = 880;
-      o.connect(g);
-      g.connect(ctx.destination);
-      g.gain.setValueAtTime(0.0001, ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
-      o.start();
-      o.stop(ctx.currentTime + 0.5);
+      // Pleasant 3-tone notification chime: C6 → E6 → G6
+      const notes = [
+        { freq: 1046, start: 0.0, dur: 0.18 },
+        { freq: 1318, start: 0.18, dur: 0.18 },
+        { freq: 1568, start: 0.36, dur: 0.34 },
+      ];
+      notes.forEach(({ freq, start, dur }) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = "triangle";
+        o.frequency.value = freq;
+        o.connect(g);
+        g.connect(ctx.destination);
+        const t0 = ctx.currentTime + start;
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.35, t0 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+        o.start(t0);
+        o.stop(t0 + dur + 0.05);
+      });
+      // Repeat once after a short pause for stronger alert
+      setTimeout(() => {
+        try {
+          const ctx2 = new (window.AudioContext || (window as any).webkitAudioContext)();
+          const o = ctx2.createOscillator();
+          const g = ctx2.createGain();
+          o.type = "triangle";
+          o.frequency.value = 1318;
+          o.connect(g);
+          g.connect(ctx2.destination);
+          g.gain.setValueAtTime(0.0001, ctx2.currentTime);
+          g.gain.exponentialRampToValueAtTime(0.3, ctx2.currentTime + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, ctx2.currentTime + 0.4);
+          o.start();
+          o.stop(ctx2.currentTime + 0.45);
+        } catch {}
+      }, 900);
     } catch {}
   };
 
