@@ -480,6 +480,17 @@ const Admin = () => {
                               </SelectContent>
                             </Select>
                           </TableCell>
+                          <TableCell className="print:hidden">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => sendOrderToWhatsApp(o.id)}
+                              className="gap-1 border-green-600 text-green-700 hover:bg-green-50 hover:text-green-800"
+                              title="إرسال الطلب إلى رقم المتجر على واتساب"
+                            >
+                              <MessageCircle className="h-4 w-4" />إرسال
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))
                     )}
