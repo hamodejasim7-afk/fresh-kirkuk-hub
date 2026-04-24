@@ -126,6 +126,8 @@ const Admin = () => {
     const url = buildWhatsAppLink(storePhone, text);
     window.open(url, "_blank", "noopener,noreferrer");
   };
+
+  const loadData = async () => {
     setLoading(true);
 
     // Active orders only (not archived)
