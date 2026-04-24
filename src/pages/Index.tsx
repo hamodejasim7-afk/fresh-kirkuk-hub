@@ -145,20 +145,32 @@ const Index = () => {
 
           <div className="flex items-center gap-2">
             {user && role === "admin" && (
-              <Button asChild variant="outline" size="sm" className="hidden sm:flex">
-                <Link to="/admin"><LayoutDashboard className="h-4 w-4 ml-1" />لوحة الإدارة</Link>
+              <Button asChild variant="outline" size="sm" className="gap-1">
+                <Link to="/admin">
+                  <LayoutDashboard className="h-4 w-4" />
+                  <span className="hidden sm:inline">لوحة الإدارة</span>
+                  <span className="sm:hidden">الإدارة</span>
+                </Link>
               </Button>
             )}
             {user && role === "driver" && (
-              <Button asChild variant="outline" size="sm" className="hidden sm:flex">
-                <Link to="/driver"><Truck className="h-4 w-4 ml-1" />لوحة السائق</Link>
+              <Button asChild variant="outline" size="sm" className="gap-1">
+                <Link to="/driver">
+                  <Truck className="h-4 w-4" />
+                  <span className="hidden sm:inline">لوحة السائق</span>
+                  <span className="sm:hidden">السائق</span>
+                </Link>
               </Button>
             )}
             {user ? (
               <Button onClick={signOut} variant="ghost" size="sm">خروج</Button>
             ) : (
-              <Button asChild variant="ghost" size="sm">
-                <Link to="/auth"><LogIn className="h-4 w-4 ml-1" />دخول الموظفين</Link>
+              <Button asChild variant="ghost" size="sm" className="gap-1">
+                <Link to="/auth">
+                  <LogIn className="h-4 w-4" />
+                  <span className="hidden sm:inline">دخول الموظفين</span>
+                  <span className="sm:hidden">دخول</span>
+                </Link>
               </Button>
             )}
 
