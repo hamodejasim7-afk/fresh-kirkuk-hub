@@ -62,6 +62,13 @@ interface Driver {
   phone: string | null;
 }
 
+interface Staff {
+  id: string;
+  full_name: string | null;
+  phone: string | null;
+  roles: ("admin" | "driver")[];
+}
+
 const STATUS_LABEL: Record<string, string> = {
   new: "جديد",
   assigned: "معين لسائق",
