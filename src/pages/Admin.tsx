@@ -408,13 +408,14 @@ const Admin = () => {
                       <TableHead className="text-right">الحالة</TableHead>
                       <TableHead className="text-right print:hidden">السائق</TableHead>
                       <TableHead className="text-right print:hidden">إجراءات</TableHead>
+                      <TableHead className="text-right print:hidden">واتساب</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {loading ? (
-                      <TableRow><TableCell colSpan={9} className="text-center py-8">جاري التحميل...</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={10} className="text-center py-8">جاري التحميل...</TableCell></TableRow>
                     ) : orders.length === 0 ? (
-                      <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">لا توجد طلبات نشطة</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">لا توجد طلبات نشطة</TableCell></TableRow>
                     ) : (
                       orders.map((o) => (
                         <TableRow key={o.id}>
