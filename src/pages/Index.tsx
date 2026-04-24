@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/sheet";
 import {
   ShoppingCart, Plus, Minus, Trash2, Phone, MapPin, User,
-  Instagram, Facebook, LogIn, LayoutDashboard, Truck,
+  Instagram, Facebook, LogIn, LayoutDashboard, Truck, Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 import freshLogo from "@/assets/fresh-logo.png";
@@ -19,6 +19,7 @@ import { PRODUCTS, type Category } from "@/data/products";
 import { formatIQD } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
 
 type CartItem = (typeof PRODUCTS)[number] & { qty: number };
 type Cat = "الكل" | Category;
