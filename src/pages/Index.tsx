@@ -235,8 +235,17 @@ const Index = () => {
                       <span className="font-semibold">المجموع:</span>
                       <span className="font-bold text-primary">{formatIQD(totalPrice)}</span>
                     </div>
-                    <Button onClick={submitOrder} size="lg" className="w-full" disabled={submitting}>
-                      {submitting ? "جاري الإرسال..." : "تأكيد الطلب"}
+                    <Button
+                      onClick={submitOrder}
+                      size="lg"
+                      className="w-full"
+                      disabled={submitting || !storeSettings.is_open}
+                    >
+                      {!storeSettings.is_open
+                        ? "المتجر مغلق حالياً"
+                        : submitting
+                        ? "جاري الإرسال..."
+                        : "تأكيد الطلب"}
                     </Button>
                   </SheetFooter>
                 )}
