@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -42,6 +42,7 @@ interface Order {
   driver_id: string | null;
   archived_at: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 interface OrderItem {
