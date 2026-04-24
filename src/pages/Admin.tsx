@@ -915,4 +915,127 @@ const StaffPanel = ({
   );
 };
 
+const StoreStatusCard = () => {
+  const { settings, loading } = useStoreSettings();
+  const [message, setMessage] = useState(settings.closed_message);
+  const [saving, setSaving] = useState(false);
+  const [editingMsg, setEditingMsg] = useState(false);
+
+  useEffect(() => {
+    if (!editingMsg) setMessage(settings.closed_message);
+  }, [settings.closed_message, editingMsg]);
+
+  const toggleStore = async (next: boolean) => {
+    setSaving(true);
+    const { error } = await supabase
+      .from("store_settings")
+      .update({ is_open: next })
+      .eq("id", true);
+    setSaving(false);
+    if (error) {
+      toast.error("فشل تحديث حالة المتجر: " + error.message);
+    } else {
+      toast.success(next ? "تم فتح المتجر ✅" : "تم إغلاق المتجر 🔒");
+    }
+  };
+
+  const saveMessage = async () => {
+    setSaving(true);
+    const { error } = await supabase
+      .from("store_settings")
+      .update({ closed_message: message.trim() || "المتجر مغلق مؤقتاً" })
+      .eq("id", true);
+    setSaving(false);
+    if (error) {
+      toast.error("فشل حفظ الرسالة");
+    } else {
+      toast.success("تم حفظ الرسالة");
+      setEditingMsg(false);
+    }
+  };
+
+  const isOpen = settings.is_open;
+
+  return (
+    <Card
+      className={`p-4 print:hidden border-2 ${
+        isOpen ? "border-primary/30 bg-primary/5" : "border-destructive/40 bg-destructive/5"
+      }`}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div
+            className={`p-2 rounded-full ${
+              isOpen ? "bg-primary/15 text-primary" : "bg-destructive/15 text-destructive"
+            }`}
+          >
+            {isOpen ? <Store className="h-5 w-5" /> : <PowerOff className="h-5 w-5" />}
+          </div>
+          <div>
+            <h3 className="font-semibold">حالة المتجر</h3>
+            <p className="text-sm text-muted-foreground">
+              {isOpen
+                ? "المتجر مفتوح ويستقبل الطلبات حالياً"
+                : "المتجر مغلق — لا يمكن للزبائن إرسال طلبات جديدة"}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <span
+            className={`text-sm font-bold ${isOpen ? "text-primary" : "text-destructive"}`}
+          >
+            {isOpen ? "مفتوح" : "مغلق"}
+          </span>
+          <Switch
+            checked={isOpen}
+            disabled={loading || saving}
+            onCheckedChange={toggleStore}
+            aria-label="تبديل حالة المتجر"
+          />
+        </div>
+      </div>
+
+      <div className="mt-4 space-y-2">
+        <Label className="text-xs text-muted-foreground">
+          الرسالة التي ستظهر للزبائن عند الإغلاق:
+        </Label>
+        {editingMsg ? (
+          <div className="space-y-2">
+            <Textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              rows={2}
+              maxLength={300}
+            />
+            <div className="flex gap-2">
+              <Button size="sm" onClick={saveMessage} disabled={saving}>
+                حفظ الرسالة
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setEditingMsg(false);
+                  setMessage(settings.closed_message);
+                }}
+              >
+                إلغاء
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-start gap-2">
+            <p className="flex-1 text-sm bg-background/60 rounded-md px-3 py-2 border">
+              {settings.closed_message}
+            </p>
+            <Button size="sm" variant="outline" onClick={() => setEditingMsg(true)}>
+              تعديل
+            </Button>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+};
+
 export default Admin;
