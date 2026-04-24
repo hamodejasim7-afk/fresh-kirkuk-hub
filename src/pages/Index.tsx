@@ -71,6 +71,10 @@ const Index = () => {
   const removeItem = (id: string) => setCart((prev) => prev.filter((i) => i.id !== id));
 
   const submitOrder = async () => {
+    if (!storeSettings.is_open) {
+      toast.error("المتجر مغلق حالياً، لا يمكن استلام الطلبات");
+      return;
+    }
     if (!customer.name.trim() || !customer.phone.trim() || !customer.address.trim()) {
       toast.error("يرجى تعبئة الاسم ورقم الهاتف والعنوان");
       return;
