@@ -255,6 +255,18 @@ const Index = () => {
         </div>
       </header>
 
+      {/* Store closed banner */}
+      {!storeSettings.is_open && (
+        <div className="bg-destructive text-destructive-foreground">
+          <div className="container mx-auto flex items-center justify-center gap-3 px-4 py-3 text-center">
+            <Clock className="h-5 w-5 flex-shrink-0 animate-pulse" />
+            <p className="text-sm font-semibold sm:text-base">
+              {storeSettings.closed_message}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Hero */}
       <section className="relative overflow-hidden border-b" style={{ background: "var(--gradient-soft)" }}>
         <div className="container mx-auto grid gap-6 px-4 py-10 md:grid-cols-2 md:items-center md:py-16">
