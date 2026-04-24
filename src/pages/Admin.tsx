@@ -90,6 +90,7 @@ const Admin = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [items, setItems] = useState<Record<string, OrderItem[]>>({});
   const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Store WhatsApp settings (saved per-browser)
