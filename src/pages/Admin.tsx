@@ -311,6 +311,51 @@ const Admin = () => {
           <StatCard icon={<Package />} label="إجمالي نشط" value={formatIQD(stats.all)} sub={`${stats.allCount} طلب`} />
         </div>
 
+        {/* WhatsApp / notifications settings */}
+        <Card className="p-4 print:hidden">
+          <h3 className="font-semibold mb-3 flex items-center gap-2">
+            <Settings className="h-4 w-4" />إعدادات الإشعارات والواتساب
+          </h3>
+          <div className="grid gap-3 md:grid-cols-3 items-end">
+            <div className="space-y-1">
+              <Label htmlFor="store-phone">رقم واتساب المتجر</Label>
+              <Input
+                id="store-phone"
+                value={storePhone}
+                onChange={(e) => setStorePhone(e.target.value)}
+                placeholder="07XX XXX XXXX"
+                dir="ltr"
+              />
+              <p className="text-xs text-muted-foreground">عراقي: يكفي 07XXXXXXXXX</p>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={autoSend}
+                onChange={(e) => setAutoSend(e.target.checked)}
+                className="h-4 w-4 accent-primary"
+              />
+              <span className="text-sm">فتح واتساب تلقائياً عند كل طلب جديد</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={soundOn}
+                onChange={(e) => setSoundOn(e.target.checked)}
+                className="h-4 w-4 accent-primary"
+              />
+              <span className="text-sm flex items-center gap-1">
+                {soundOn ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+                صوت تنبيه عند الطلب الجديد
+              </span>
+            </label>
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            💡 الإرسال يفتح واتساب ويب/التطبيق برسالة جاهزة فيها كل تفاصيل الطلب — مجاني تماماً.
+            للفتح التلقائي اسمح للمتصفح بفتح النوافذ المنبثقة لهذا الموقع.
+          </p>
+        </Card>
+
         {/* Action bar */}
         <div className="flex flex-wrap items-center gap-2 print:hidden">
           <Button onClick={printReport} variant="outline" className="gap-2">
