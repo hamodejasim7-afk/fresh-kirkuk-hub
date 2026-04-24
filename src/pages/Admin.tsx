@@ -197,6 +197,35 @@ const Admin = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Detect newly arrived orders → beep + auto-open WhatsApp
+  useEffect(() => {
+    if (orders.length === 0) return;
+    const currentIds = new Set(orders.map((o) => o.id));
+
+    if (!initializedRef.current) {
+      knownIdsRef.current = currentIds;
+      initializedRef.current = true;
+      return;
+    }
+
+    const newOnes = orders.filter((o) => !knownIdsRef.current.has(o.id));
+    if (newOnes.length > 0) {
+      playBeep();
+      toast.success(`وصل ${newOnes.length} طلب جديد!`);
+      if (autoSend && storePhone.trim()) {
+        // Wait briefly so order_items load too
+        setTimeout(() => {
+          newOnes.forEach((o) => {
+            const text = buildOrderWhatsAppText(o, items[o.id] ?? []);
+            window.open(buildWhatsAppLink(storePhone, text), "_blank", "noopener,noreferrer");
+          });
+        }, 600);
+      }
+    }
+    knownIdsRef.current = currentIds;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders]);
+
   const updateStatus = async (id: string, status: string) => {
     const { error } = await supabase.from("orders").update({ status }).eq("id", id);
     if (error) toast.error("فشل التحديث");
