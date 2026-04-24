@@ -195,19 +195,38 @@ const Admin = () => {
       }
     }
 
-    // Drivers
+    // All staff (admins + drivers)
     const { data: rolesData } = await supabase
       .from("user_roles")
-      .select("user_id")
-      .eq("role", "driver");
-    const driverIds = (rolesData ?? []).map((r) => r.user_id);
-    if (driverIds.length > 0) {
+      .select("user_id, role");
+    const rolesByUser = new Map<string, ("admin" | "driver")[]>();
+    (rolesData ?? []).forEach((r) => {
+      const arr = rolesByUser.get(r.user_id) ?? [];
+      arr.push(r.role as "admin" | "driver");
+      rolesByUser.set(r.user_id, arr);
+    });
+    const allIds = Array.from(rolesByUser.keys());
+
+    if (allIds.length > 0) {
       const { data: profs } = await supabase
         .from("profiles")
         .select("id, full_name, phone")
-        .in("id", driverIds);
-      setDrivers(profs ?? []);
+        .in("id", allIds);
+      const profMap = new Map((profs ?? []).map((p) => [p.id, p]));
+      const staffList: Staff[] = allIds.map((id) => ({
+        id,
+        full_name: profMap.get(id)?.full_name ?? null,
+        phone: profMap.get(id)?.phone ?? null,
+        roles: rolesByUser.get(id) ?? [],
+      }));
+      setStaff(staffList);
+      setDrivers(
+        staffList
+          .filter((s) => s.roles.includes("driver"))
+          .map((s) => ({ id: s.id, full_name: s.full_name, phone: s.phone })),
+      );
     } else {
+      setStaff([]);
       setDrivers([]);
     }
 
