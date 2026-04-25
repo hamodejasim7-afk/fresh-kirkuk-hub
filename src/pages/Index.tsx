@@ -32,7 +32,7 @@ const CATEGORIES: Cat[] = ["الكل", "خضار وفواكه", "لحوم", "أ�
 
 const Index = () => {
   const { user, role, signOut } = useAuth();
-  const { settings: storeSettings } = useStoreSettings();
+  const { settings: storeSettings, loading } = useStoreSettings();
   const { products } = useProducts({ onlyAvailable: true });
   const [activeCat, setActiveCat] = useState<Cat>("الكل");
   const [cart, setCart] = useState<CartItem[]>([]);
