@@ -26,7 +26,7 @@ import { formatIQD } from "@/lib/format";
 import { toast } from "sonner";
 import {
   Printer, RotateCcw, Calendar, TrendingUp, Users, Package, LogOut, ArrowRight, UserPlus,
-  MessageCircle, Settings, Bell, BellOff, Store, PowerOff,
+  MessageCircle, Settings, Bell, BellOff, Store, PowerOff, Download, Archive, Undo2,
 } from "lucide-react";
 import freshLogo from "@/assets/fresh-logo.png";
 import { buildOrderWhatsAppText, buildWhatsAppLink } from "@/lib/whatsapp";
@@ -93,6 +93,8 @@ const Admin = () => {
   const { signOut, user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [items, setItems] = useState<Record<string, OrderItem[]>>({});
+  const [archivedOrders, setArchivedOrders] = useState<Order[]>([]);
+  const [archivedItems, setArchivedItems] = useState<Record<string, OrderItem[]>>({});
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
@@ -322,8 +324,76 @@ const Admin = () => {
     window.print();
   };
 
+  const loadArchive = async () => {
+    const { data: ordersData, error } = await supabase
+      .from("orders")
+      .select("*")
+      .not("archived_at", "is", null)
+      .order("archived_at", { ascending: false })
+      .limit(500);
+    if (error) {
+      toast.error("فشل تحميل الأرشيف");
+      return;
+    }
+    setArchivedOrders(ordersData ?? []);
+    const ids = (ordersData ?? []).map((o) => o.id);
+    if (ids.length > 0) {
+      const { data: itemsData } = await supabase
+        .from("order_items").select("*").in("order_id", ids);
+      const grouped: Record<string, OrderItem[]> = {};
+      (itemsData ?? []).forEach((it) => { (grouped[it.order_id] ||= []).push(it); });
+      setArchivedItems(grouped);
+    } else {
+      setArchivedItems({});
+    }
+  };
+
+  const exportOrdersCSV = (ordersList: Order[], itemsMap: Record<string, OrderItem[]>, filename: string) => {
+    if (ordersList.length === 0) {
+      toast.error("لا توجد طلبات للتصدير");
+      return;
+    }
+    const escape = (v: any) => {
+      const s = String(v ?? "");
+      if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+      return s;
+    };
+    const headers = ["رقم الطلب","التاريخ","الاسم","الهاتف","العنوان","الحالة","المجموع IQD","ملاحظات","المنتجات"];
+    const rows = ordersList.map((o) => {
+      const its = itemsMap[o.id] ?? [];
+      const itsStr = its.map((it) => `${it.product_name} x${it.quantity} (${it.price_iqd})`).join(" | ");
+      return [
+        o.id, new Date(o.created_at).toLocaleString("ar-IQ"),
+        o.customer_name, o.customer_phone, o.customer_address,
+        STATUS_LABEL[o.status] ?? o.status, o.total_iqd, o.notes ?? "", itsStr,
+      ].map(escape).join(",");
+    });
+    const csv = "\uFEFF" + [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("تم تنزيل الملف");
+  };
+
+  const restoreOrder = async (id: string) => {
+    const { error } = await supabase
+      .from("orders").update({ archived_at: null }).eq("id", id);
+    if (error) {
+      toast.error("فشل الاستعادة: " + error.message);
+    } else {
+      toast.success("تم استعادة الطلب");
+      loadArchive();
+      loadData();
+    }
+  };
+
   const resetSales = async () => {
-    // Archive all non-archived orders by setting archived_at = now()
+    // Backup CSV first (auto)
+    exportOrdersCSV(orders, items, `fresh-backup-${new Date().toISOString().slice(0,10)}.csv`);
     const { error } = await supabase
       .from("orders")
       .update({ archived_at: new Date().toISOString() })
@@ -331,8 +401,9 @@ const Admin = () => {
     if (error) {
       toast.error("فشل التصفير: " + error.message);
     } else {
-      toast.success("تم تصفير المبيعات وأرشفة الطلبات");
+      toast.success("تم تصفير المبيعات وأرشفة الطلبات (مع نسخة احتياطية)");
       loadData();
+      loadArchive();
     }
   };
 
@@ -422,6 +493,13 @@ const Admin = () => {
             <Printer className="h-4 w-4" />طباعة التقرير
           </Button>
 
+          <Button
+            onClick={() => exportOrdersCSV(orders, items, `fresh-active-${new Date().toISOString().slice(0,10)}.csv`)}
+            variant="outline" className="gap-2" disabled={orders.length === 0}
+          >
+            <Download className="h-4 w-4" />نسخة احتياطية CSV
+          </Button>
+
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" className="gap-2" disabled={orders.length === 0}>
@@ -433,8 +511,8 @@ const Admin = () => {
                 <AlertDialogTitle>تأكيد تصفير المبيعات</AlertDialogTitle>
                 <AlertDialogDescription>
                   سيتم أرشفة جميع الطلبات الحالية ({orders.length} طلب) وإعادة تصفير العدادات.
-                  <br /><strong className="text-destructive">تأكد من طباعة أو حفظ التقرير قبل التصفير.</strong>
-                  <br />هذا الإجراء لا يمكن التراجع عنه.
+                  <br />✅ <strong>سيتم تنزيل نسخة احتياطية CSV تلقائياً</strong> قبل التصفير.
+                  <br />📦 الطلبات تُحفظ في تبويب "الأرشيف" ويمكن استعادتها لاحقاً.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -447,10 +525,11 @@ const Admin = () => {
           </AlertDialog>
         </div>
 
-        <Tabs defaultValue="orders">
+        <Tabs defaultValue="orders" onValueChange={(v) => { if (v === "archive") loadArchive(); }}>
           <TabsList className="print:hidden">
             <TabsTrigger value="orders">الطلبات ({orders.length})</TabsTrigger>
             <TabsTrigger value="products">المنتجات</TabsTrigger>
+            <TabsTrigger value="archive" className="gap-1"><Archive className="h-3.5 w-3.5" />الأرشيف</TabsTrigger>
             <TabsTrigger value="staff">الموظفون ({staff.length})</TabsTrigger>
             <TabsTrigger value="drivers">السواق ({drivers.length})</TabsTrigger>
           </TabsList>
@@ -563,6 +642,67 @@ const Admin = () => {
 
           <TabsContent value="products" className="mt-4">
             <ProductsPanel />
+          </TabsContent>
+
+          <TabsContent value="archive" className="mt-4">
+            <Card className="p-4">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <div>
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Archive className="h-4 w-4" />الطلبات المؤرشفة ({archivedOrders.length})
+                  </h3>
+                  <p className="text-xs text-muted-foreground">آخر 500 طلب مؤرشف — يمكن الاستعادة أو التصدير</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={loadArchive} variant="outline" size="sm">تحديث</Button>
+                  <Button
+                    onClick={() => exportOrdersCSV(archivedOrders, archivedItems, `fresh-archive-${new Date().toISOString().slice(0,10)}.csv`)}
+                    variant="outline" size="sm" className="gap-1"
+                    disabled={archivedOrders.length === 0}
+                  >
+                    <Download className="h-3.5 w-3.5" />تصدير CSV
+                  </Button>
+                </div>
+              </div>
+              {archivedOrders.length === 0 ? (
+                <p className="py-8 text-center text-muted-foreground text-sm">لا توجد طلبات مؤرشفة</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>التاريخ</TableHead>
+                        <TableHead>الزبون</TableHead>
+                        <TableHead>الهاتف</TableHead>
+                        <TableHead>المجموع</TableHead>
+                        <TableHead>الحالة</TableHead>
+                        <TableHead>أُرشف في</TableHead>
+                        <TableHead>إجراء</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {archivedOrders.map((o) => (
+                        <TableRow key={o.id}>
+                          <TableCell className="text-xs">{new Date(o.created_at).toLocaleDateString("ar-IQ")}</TableCell>
+                          <TableCell className="font-medium">{o.customer_name}</TableCell>
+                          <TableCell dir="ltr" className="text-xs">{o.customer_phone}</TableCell>
+                          <TableCell>{formatIQD(o.total_iqd)}</TableCell>
+                          <TableCell><Badge variant={STATUS_VARIANT[o.status] ?? "outline"}>{STATUS_LABEL[o.status] ?? o.status}</Badge></TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {o.archived_at ? new Date(o.archived_at).toLocaleDateString("ar-IQ") : "-"}
+                          </TableCell>
+                          <TableCell>
+                            <Button onClick={() => restoreOrder(o.id)} size="sm" variant="outline" className="gap-1">
+                              <Undo2 className="h-3.5 w-3.5" />استعادة
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </Card>
           </TabsContent>
 
           <TabsContent value="staff" className="mt-4">
