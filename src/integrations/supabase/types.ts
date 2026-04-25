@@ -97,6 +97,51 @@ export type Database = {
         }
         Relationships: []
       }
+      products: {
+        Row: {
+          category: string
+          created_at: string
+          emoji: string | null
+          id: string
+          image_url: string | null
+          is_available: boolean
+          name: string
+          price_iqd: number
+          sort_order: number
+          stock_qty: number | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean
+          name: string
+          price_iqd?: number
+          sort_order?: number
+          stock_qty?: number | null
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean
+          name?: string
+          price_iqd?: number
+          sort_order?: number
+          stock_qty?: number | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

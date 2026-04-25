@@ -33,6 +33,7 @@ import { buildOrderWhatsAppText, buildWhatsAppLink } from "@/lib/whatsapp";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { ProductsPanel } from "@/components/ProductsPanel";
 
 interface Order {
   id: string;
@@ -449,6 +450,7 @@ const Admin = () => {
         <Tabs defaultValue="orders">
           <TabsList className="print:hidden">
             <TabsTrigger value="orders">الطلبات ({orders.length})</TabsTrigger>
+            <TabsTrigger value="products">المنتجات</TabsTrigger>
             <TabsTrigger value="staff">الموظفون ({staff.length})</TabsTrigger>
             <TabsTrigger value="drivers">السواق ({drivers.length})</TabsTrigger>
           </TabsList>
@@ -557,6 +559,10 @@ const Admin = () => {
                 </Table>
               </div>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="products" className="mt-4">
+            <ProductsPanel />
           </TabsContent>
 
           <TabsContent value="staff" className="mt-4">

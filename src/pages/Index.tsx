@@ -15,20 +15,21 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import freshLogo from "@/assets/fresh-logo.png";
-import { PRODUCTS, type Category } from "@/data/products";
 import { formatIQD } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { useProducts, type DBProduct } from "@/hooks/useProducts";
 
-type CartItem = (typeof PRODUCTS)[number] & { qty: number };
-type Cat = "الكل" | Category;
+type CartItem = DBProduct & { qty: number };
+type Cat = "الكل" | string;
 
 const CATEGORIES: Cat[] = ["الكل", "خضار وفواكه", "لحوم", "أسماك", "دجاج"];
 
 const Index = () => {
   const { user, role, signOut } = useAuth();
   const { settings: storeSettings } = useStoreSettings();
+  const { products } = useProducts({ onlyAvailable: true });
   const [activeCat, setActiveCat] = useState<Cat>("الكل");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
@@ -47,14 +48,14 @@ const Index = () => {
   }, [cart]);
 
   const filtered = useMemo(
-    () => (activeCat === "الكل" ? PRODUCTS : PRODUCTS.filter((p) => p.category === activeCat)),
-    [activeCat]
+    () => (activeCat === "الكل" ? products : products.filter((p) => p.category === activeCat)),
+    [activeCat, products]
   );
 
   const totalQty = cart.reduce((s, i) => s + i.qty, 0);
-  const totalPrice = cart.reduce((s, i) => s + i.qty * i.price, 0);
+  const totalPrice = cart.reduce((s, i) => s + i.qty * i.price_iqd, 0);
 
-  const addToCart = (p: (typeof PRODUCTS)[number]) => {
+  const addToCart = (p: DBProduct) => {
     setCart((prev) => {
       const found = prev.find((i) => i.id === p.id);
       if (found) return prev.map((i) => (i.id === p.id ? { ...i, qty: i.qty + 1 } : i));
@@ -106,7 +107,7 @@ const Index = () => {
         product_name: c.name,
         category: c.category,
         unit: c.unit,
-        price_iqd: c.price,
+        price_iqd: c.price_iqd,
         quantity: c.qty,
       }));
 
@@ -198,10 +199,16 @@ const Index = () => {
                     <div className="space-y-3">
                       {cart.map((item) => (
                         <div key={item.id} className="flex items-center gap-3 rounded-lg border bg-card p-3">
-                          <div className="text-3xl">{item.emoji}</div>
+                          <div className="text-3xl">
+                            {item.image_url ? (
+                              <img src={item.image_url} alt={item.name} className="h-12 w-12 rounded object-cover" />
+                            ) : (
+                              <span>{item.emoji}</span>
+                            )}
+                          </div>
                           <div className="flex-1">
                             <p className="font-medium">{item.name}</p>
-                            <p className="text-sm text-muted-foreground">{formatIQD(item.price)} / {item.unit}</p>
+                            <p className="text-sm text-muted-foreground">{formatIQD(item.price_iqd)} / {item.unit}</p>
                           </div>
                           <div className="flex items-center gap-1">
                             <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => updateQty(item.id, -1)}>
@@ -318,12 +325,18 @@ const Index = () => {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {filtered.map((p) => (
             <Card key={p.id} className="group overflow-hidden transition-smooth hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
-              <div className="flex aspect-square items-center justify-center bg-accent text-7xl">{p.emoji}</div>
+              <div className="flex aspect-square items-center justify-center overflow-hidden bg-accent text-7xl">
+                {p.image_url ? (
+                  <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" loading="lazy" />
+                ) : (
+                  <span>{p.emoji ?? "📦"}</span>
+                )}
+              </div>
               <div className="space-y-2 p-3">
                 <Badge variant="outline" className="text-xs">{p.category}</Badge>
                 <h3 className="font-semibold leading-tight">{p.name}</h3>
                 <div className="flex items-baseline justify-between">
-                  <span className="text-lg font-bold text-primary">{formatIQD(p.price)}</span>
+                  <span className="text-lg font-bold text-primary">{formatIQD(p.price_iqd)}</span>
                   <span className="text-xs text-muted-foreground">/ {p.unit}</span>
                 </div>
                 <Button onClick={() => addToCart(p)} className="w-full gap-1" size="sm">
