@@ -561,6 +561,10 @@ const Admin = () => {
             </Card>
           </TabsContent>
 
+          <TabsContent value="products" className="mt-4">
+            <ProductsPanel />
+          </TabsContent>
+
           <TabsContent value="staff" className="mt-4">
             <StaffPanel staff={staff} reload={loadData} currentUserId={user?.id ?? ""} />
           </TabsContent>
