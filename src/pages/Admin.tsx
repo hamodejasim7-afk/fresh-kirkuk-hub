@@ -324,8 +324,76 @@ const Admin = () => {
     window.print();
   };
 
+  const loadArchive = async () => {
+    const { data: ordersData, error } = await supabase
+      .from("orders")
+      .select("*")
+      .not("archived_at", "is", null)
+      .order("archived_at", { ascending: false })
+      .limit(500);
+    if (error) {
+      toast.error("فشل تحميل الأرشيف");
+      return;
+    }
+    setArchivedOrders(ordersData ?? []);
+    const ids = (ordersData ?? []).map((o) => o.id);
+    if (ids.length > 0) {
+      const { data: itemsData } = await supabase
+        .from("order_items").select("*").in("order_id", ids);
+      const grouped: Record<string, OrderItem[]> = {};
+      (itemsData ?? []).forEach((it) => { (grouped[it.order_id] ||= []).push(it); });
+      setArchivedItems(grouped);
+    } else {
+      setArchivedItems({});
+    }
+  };
+
+  const exportOrdersCSV = (ordersList: Order[], itemsMap: Record<string, OrderItem[]>, filename: string) => {
+    if (ordersList.length === 0) {
+      toast.error("لا توجد طلبات للتصدير");
+      return;
+    }
+    const escape = (v: any) => {
+      const s = String(v ?? "");
+      if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+      return s;
+    };
+    const headers = ["رقم الطلب","التاريخ","الاسم","الهاتف","العنوان","الحالة","المجموع IQD","ملاحظات","المنتجات"];
+    const rows = ordersList.map((o) => {
+      const its = itemsMap[o.id] ?? [];
+      const itsStr = its.map((it) => `${it.product_name} x${it.quantity} (${it.price_iqd})`).join(" | ");
+      return [
+        o.id, new Date(o.created_at).toLocaleString("ar-IQ"),
+        o.customer_name, o.customer_phone, o.customer_address,
+        STATUS_LABEL[o.status] ?? o.status, o.total_iqd, o.notes ?? "", itsStr,
+      ].map(escape).join(",");
+    });
+    const csv = "\uFEFF" + [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("تم تنزيل الملف");
+  };
+
+  const restoreOrder = async (id: string) => {
+    const { error } = await supabase
+      .from("orders").update({ archived_at: null }).eq("id", id);
+    if (error) {
+      toast.error("فشل الاستعادة: " + error.message);
+    } else {
+      toast.success("تم استعادة الطلب");
+      loadArchive();
+      loadData();
+    }
+  };
+
   const resetSales = async () => {
-    // Archive all non-archived orders by setting archived_at = now()
+    // Backup CSV first (auto)
+    exportOrdersCSV(orders, items, `fresh-backup-${new Date().toISOString().slice(0,10)}.csv`);
     const { error } = await supabase
       .from("orders")
       .update({ archived_at: new Date().toISOString() })
@@ -333,8 +401,9 @@ const Admin = () => {
     if (error) {
       toast.error("فشل التصفير: " + error.message);
     } else {
-      toast.success("تم تصفير المبيعات وأرشفة الطلبات");
+      toast.success("تم تصفير المبيعات وأرشفة الطلبات (مع نسخة احتياطية)");
       loadData();
+      loadArchive();
     }
   };
 
