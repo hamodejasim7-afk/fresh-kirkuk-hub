@@ -199,10 +199,16 @@ const Index = () => {
                     <div className="space-y-3">
                       {cart.map((item) => (
                         <div key={item.id} className="flex items-center gap-3 rounded-lg border bg-card p-3">
-                          <div className="text-3xl">{item.emoji}</div>
+                          <div className="text-3xl">
+                            {item.image_url ? (
+                              <img src={item.image_url} alt={item.name} className="h-12 w-12 rounded object-cover" />
+                            ) : (
+                              <span>{item.emoji}</span>
+                            )}
+                          </div>
                           <div className="flex-1">
                             <p className="font-medium">{item.name}</p>
-                            <p className="text-sm text-muted-foreground">{formatIQD(item.price)} / {item.unit}</p>
+                            <p className="text-sm text-muted-foreground">{formatIQD(item.price_iqd)} / {item.unit}</p>
                           </div>
                           <div className="flex items-center gap-1">
                             <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => updateQty(item.id, -1)}>
