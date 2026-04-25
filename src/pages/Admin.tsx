@@ -644,6 +644,67 @@ const Admin = () => {
             <ProductsPanel />
           </TabsContent>
 
+          <TabsContent value="archive" className="mt-4">
+            <Card className="p-4">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <div>
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Archive className="h-4 w-4" />الطلبات المؤرشفة ({archivedOrders.length})
+                  </h3>
+                  <p className="text-xs text-muted-foreground">آخر 500 طلب مؤرشف — يمكن الاستعادة أو التصدير</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={loadArchive} variant="outline" size="sm">تحديث</Button>
+                  <Button
+                    onClick={() => exportOrdersCSV(archivedOrders, archivedItems, `fresh-archive-${new Date().toISOString().slice(0,10)}.csv`)}
+                    variant="outline" size="sm" className="gap-1"
+                    disabled={archivedOrders.length === 0}
+                  >
+                    <Download className="h-3.5 w-3.5" />تصدير CSV
+                  </Button>
+                </div>
+              </div>
+              {archivedOrders.length === 0 ? (
+                <p className="py-8 text-center text-muted-foreground text-sm">لا توجد طلبات مؤرشفة</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>التاريخ</TableHead>
+                        <TableHead>الزبون</TableHead>
+                        <TableHead>الهاتف</TableHead>
+                        <TableHead>المجموع</TableHead>
+                        <TableHead>الحالة</TableHead>
+                        <TableHead>أُرشف في</TableHead>
+                        <TableHead>إجراء</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {archivedOrders.map((o) => (
+                        <TableRow key={o.id}>
+                          <TableCell className="text-xs">{new Date(o.created_at).toLocaleDateString("ar-IQ")}</TableCell>
+                          <TableCell className="font-medium">{o.customer_name}</TableCell>
+                          <TableCell dir="ltr" className="text-xs">{o.customer_phone}</TableCell>
+                          <TableCell>{formatIQD(o.total_iqd)}</TableCell>
+                          <TableCell><Badge variant={STATUS_VARIANT[o.status] ?? "outline"}>{STATUS_LABEL[o.status] ?? o.status}</Badge></TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {o.archived_at ? new Date(o.archived_at).toLocaleDateString("ar-IQ") : "-"}
+                          </TableCell>
+                          <TableCell>
+                            <Button onClick={() => restoreOrder(o.id)} size="sm" variant="outline" className="gap-1">
+                              <Undo2 className="h-3.5 w-3.5" />استعادة
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </Card>
+          </TabsContent>
+
           <TabsContent value="staff" className="mt-4">
             <StaffPanel staff={staff} reload={loadData} currentUserId={user?.id ?? ""} />
           </TabsContent>
