@@ -7,6 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter,
 } from "@/components/ui/sheet";
 import {
@@ -20,6 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { useProducts, type DBProduct } from "@/hooks/useProducts";
+import { orderCustomerSchema } from "@/lib/orderValidation";
 
 type CartItem = DBProduct & { qty: number };
 type Cat = "الكل" | string;
@@ -33,6 +37,7 @@ const Index = () => {
   const [activeCat, setActiveCat] = useState<Cat>("الكل");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [customer, setCustomer] = useState({ name: "", phone: "", address: "", notes: "" });
 
@@ -71,13 +76,41 @@ const Index = () => {
   };
   const removeItem = (id: string) => setCart((prev) => prev.filter((i) => i.id !== id));
 
-  const submitOrder = async () => {
+  const validateCustomer = () => {
+    const parsed = orderCustomerSchema.safeParse(customer);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "تحقق من الحقول المطلوبة");
+      return null;
+    }
+    return parsed.data;
+  };
+
+  const openOrderConfirmation = () => {
+    if (cart.length === 0) {
+      toast.error("السلة فارغة");
+      return;
+    }
     if (!storeSettings.is_open) {
       toast.error("المتجر مغلق حالياً، لا يمكن استلام الطلبات");
       return;
     }
-    if (!customer.name.trim() || !customer.phone.trim() || !customer.address.trim()) {
-      toast.error("يرجى تعبئة الاسم ورقم الهاتف والعنوان");
+    if (!validateCustomer()) return;
+    setConfirmOpen(true);
+  };
+
+  const submitOrder = async () => {
+    const validatedCustomer = validateCustomer();
+    if (!validatedCustomer) return;
+
+    const { data: latestSettings } = await supabase
+      .from("store_settings")
+      .select("is_open")
+      .eq("id", true)
+      .maybeSingle();
+
+    if (latestSettings && !latestSettings.is_open) {
+      toast.error("المتجر مغلق حالياً، لا يمكن استلام الطلبات");
+      setConfirmOpen(false);
       return;
     }
     if (cart.length === 0) {
@@ -90,10 +123,10 @@ const Index = () => {
       const { data: order, error: orderErr } = await supabase
         .from("orders")
         .insert({
-          customer_name: customer.name.trim(),
-          customer_phone: customer.phone.trim(),
-          customer_address: customer.address.trim(),
-          notes: customer.notes.trim() || null,
+          customer_name: validatedCustomer.name,
+          customer_phone: validatedCustomer.phone,
+          customer_address: validatedCustomer.address,
+          notes: validatedCustomer.notes || null,
           total_iqd: totalPrice,
           status: "new",
         })
@@ -117,6 +150,7 @@ const Index = () => {
       toast.success("تم استلام طلبك! سنتصل بك قريباً.");
       setCart([]);
       setCustomer({ name: "", phone: "", address: "", notes: "" });
+      setConfirmOpen(false);
       setCartOpen(false);
     } catch (err: any) {
       console.error(err);
@@ -255,12 +289,14 @@ const Index = () => {
                       <span className="font-bold text-primary">{formatIQD(totalPrice)}</span>
                     </div>
                     <Button
-                      onClick={submitOrder}
+                      onClick={openOrderConfirmation}
                       size="lg"
                       className="w-full"
-                      disabled={submitting || !storeSettings.is_open}
+                      disabled={submitting || loading || !storeSettings.is_open}
                     >
-                      {!storeSettings.is_open
+                      {loading
+                        ? "جاري التحقق..."
+                        : !storeSettings.is_open
                         ? "المتجر مغلق حالياً"
                         : submitting
                         ? "جاري الإرسال..."
@@ -273,6 +309,41 @@ const Index = () => {
           </div>
         </div>
       </header>
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent dir="rtl" className="sm:max-w-md">
+          <DialogHeader className="text-right sm:text-right">
+            <DialogTitle>تأكيد بيانات الطلب</DialogTitle>
+            <DialogDescription>
+              راجع هذه المعلومات بسرعة قبل الإرسال النهائي.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 rounded-md border bg-accent/40 p-4 text-sm">
+            <div className="space-y-1">
+              <p className="text-muted-foreground">الاسم</p>
+              <p className="font-medium text-foreground">{customer.name.trim()}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-muted-foreground">الهاتف</p>
+              <p className="font-medium text-foreground" dir="ltr">{customer.phone.trim()}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-muted-foreground">العنوان</p>
+              <p className="font-medium text-foreground">{customer.address.trim()}</p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:flex-row-reverse sm:justify-start sm:space-x-0">
+            <Button type="button" onClick={submitOrder} disabled={submitting}>
+              {submitting ? "جاري الإرسال..." : "تأكيد وإرسال"}
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setConfirmOpen(false)} disabled={submitting}>
+              تعديل البيانات
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Store closed banner */}
       {!storeSettings.is_open && (
