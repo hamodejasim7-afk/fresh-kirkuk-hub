@@ -29,6 +29,7 @@ const CATEGORIES: Cat[] = ["الكل", "خضار وفواكه", "لحوم", "أ�
 const Index = () => {
   const { user, role, signOut } = useAuth();
   const { settings: storeSettings } = useStoreSettings();
+  const { products } = useProducts({ onlyAvailable: true });
   const [activeCat, setActiveCat] = useState<Cat>("الكل");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
@@ -47,14 +48,14 @@ const Index = () => {
   }, [cart]);
 
   const filtered = useMemo(
-    () => (activeCat === "الكل" ? PRODUCTS : PRODUCTS.filter((p) => p.category === activeCat)),
-    [activeCat]
+    () => (activeCat === "الكل" ? products : products.filter((p) => p.category === activeCat)),
+    [activeCat, products]
   );
 
   const totalQty = cart.reduce((s, i) => s + i.qty, 0);
-  const totalPrice = cart.reduce((s, i) => s + i.qty * i.price, 0);
+  const totalPrice = cart.reduce((s, i) => s + i.qty * i.price_iqd, 0);
 
-  const addToCart = (p: (typeof PRODUCTS)[number]) => {
+  const addToCart = (p: DBProduct) => {
     setCart((prev) => {
       const found = prev.find((i) => i.id === p.id);
       if (found) return prev.map((i) => (i.id === p.id ? { ...i, qty: i.qty + 1 } : i));
