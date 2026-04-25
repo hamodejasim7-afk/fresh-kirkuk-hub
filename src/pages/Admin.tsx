@@ -493,6 +493,13 @@ const Admin = () => {
             <Printer className="h-4 w-4" />طباعة التقرير
           </Button>
 
+          <Button
+            onClick={() => exportOrdersCSV(orders, items, `fresh-active-${new Date().toISOString().slice(0,10)}.csv`)}
+            variant="outline" className="gap-2" disabled={orders.length === 0}
+          >
+            <Download className="h-4 w-4" />نسخة احتياطية CSV
+          </Button>
+
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" className="gap-2" disabled={orders.length === 0}>
@@ -504,8 +511,8 @@ const Admin = () => {
                 <AlertDialogTitle>تأكيد تصفير المبيعات</AlertDialogTitle>
                 <AlertDialogDescription>
                   سيتم أرشفة جميع الطلبات الحالية ({orders.length} طلب) وإعادة تصفير العدادات.
-                  <br /><strong className="text-destructive">تأكد من طباعة أو حفظ التقرير قبل التصفير.</strong>
-                  <br />هذا الإجراء لا يمكن التراجع عنه.
+                  <br />✅ <strong>سيتم تنزيل نسخة احتياطية CSV تلقائياً</strong> قبل التصفير.
+                  <br />📦 الطلبات تُحفظ في تبويب "الأرشيف" ويمكن استعادتها لاحقاً.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -518,10 +525,11 @@ const Admin = () => {
           </AlertDialog>
         </div>
 
-        <Tabs defaultValue="orders">
+        <Tabs defaultValue="orders" onValueChange={(v) => { if (v === "archive") loadArchive(); }}>
           <TabsList className="print:hidden">
             <TabsTrigger value="orders">الطلبات ({orders.length})</TabsTrigger>
             <TabsTrigger value="products">المنتجات</TabsTrigger>
+            <TabsTrigger value="archive" className="gap-1"><Archive className="h-3.5 w-3.5" />الأرشيف</TabsTrigger>
             <TabsTrigger value="staff">الموظفون ({staff.length})</TabsTrigger>
             <TabsTrigger value="drivers">السواق ({drivers.length})</TabsTrigger>
           </TabsList>
