@@ -93,6 +93,8 @@ const Admin = () => {
   const { signOut, user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [items, setItems] = useState<Record<string, OrderItem[]>>({});
+  const [archivedOrders, setArchivedOrders] = useState<Order[]>([]);
+  const [archivedItems, setArchivedItems] = useState<Record<string, OrderItem[]>>({});
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
