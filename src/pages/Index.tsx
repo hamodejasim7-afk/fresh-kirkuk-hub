@@ -15,14 +15,14 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import freshLogo from "@/assets/fresh-logo.png";
-import { PRODUCTS, type Category } from "@/data/products";
 import { formatIQD } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { useProducts, type DBProduct } from "@/hooks/useProducts";
 
-type CartItem = (typeof PRODUCTS)[number] & { qty: number };
-type Cat = "الكل" | Category;
+type CartItem = DBProduct & { qty: number };
+type Cat = "الكل" | string;
 
 const CATEGORIES: Cat[] = ["الكل", "خضار وفواكه", "لحوم", "أسماك", "دجاج"];
 
