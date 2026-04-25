@@ -33,6 +33,7 @@ import { buildOrderWhatsAppText, buildWhatsAppLink } from "@/lib/whatsapp";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { ProductsPanel } from "@/components/ProductsPanel";
 
 interface Order {
   id: string;
