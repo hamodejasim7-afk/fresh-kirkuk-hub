@@ -107,7 +107,7 @@ const Index = () => {
         product_name: c.name,
         category: c.category,
         unit: c.unit,
-        price_iqd: c.price,
+        price_iqd: c.price_iqd,
         quantity: c.qty,
       }));
 
