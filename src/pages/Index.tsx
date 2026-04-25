@@ -325,12 +325,18 @@ const Index = () => {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {filtered.map((p) => (
             <Card key={p.id} className="group overflow-hidden transition-smooth hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
-              <div className="flex aspect-square items-center justify-center bg-accent text-7xl">{p.emoji}</div>
+              <div className="flex aspect-square items-center justify-center overflow-hidden bg-accent text-7xl">
+                {p.image_url ? (
+                  <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" loading="lazy" />
+                ) : (
+                  <span>{p.emoji ?? "📦"}</span>
+                )}
+              </div>
               <div className="space-y-2 p-3">
                 <Badge variant="outline" className="text-xs">{p.category}</Badge>
                 <h3 className="font-semibold leading-tight">{p.name}</h3>
                 <div className="flex items-baseline justify-between">
-                  <span className="text-lg font-bold text-primary">{formatIQD(p.price)}</span>
+                  <span className="text-lg font-bold text-primary">{formatIQD(p.price_iqd)}</span>
                   <span className="text-xs text-muted-foreground">/ {p.unit}</span>
                 </div>
                 <Button onClick={() => addToCart(p)} className="w-full gap-1" size="sm">
