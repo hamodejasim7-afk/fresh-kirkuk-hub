@@ -242,16 +242,30 @@ const Admin = () => {
   useEffect(() => {
     loadData();
 
-    // Realtime updates
+    // Realtime updates for orders, items, roles, profiles
     const channel = supabase
-      .channel("admin-orders")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
-        loadData();
-      })
+      .channel("admin-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => loadData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "order_items" }, () => loadData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_roles" }, () => loadData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => loadData())
       .subscribe();
+
+    // Fallback polling every 5s (skipped when tab hidden) in case realtime drops
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") loadData();
+    }, 5000);
+
+    // Reload immediately when tab becomes visible again
+    const onVisible = () => {
+      if (document.visibilityState === "visible") loadData();
+    };
+    document.addEventListener("visibilitychange", onVisible);
 
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
