@@ -154,12 +154,21 @@ const Index = () => {
       setConfirmOpen(false);
       setCartOpen(false);
     } catch (err: any) {
-      console.error(err);
+      console.error("Order submit failed", {
+        message: err?.message,
+        details: err?.details,
+        hint: err?.hint,
+        code: err?.code,
+        full: err,
+      });
       const msg = String(err?.message ?? "");
+      const details = String(err?.details ?? "");
       if (msg.includes("STORE_CLOSED")) {
         toast.error("المتجر مغلق حالياً");
+      } else if (msg.includes("row-level security") || details.includes("row-level security")) {
+        toast.error("هذه النسخة قديمة من الموقع، حدّث الصفحة وحاول مرة أخرى");
       } else {
-        toast.error("فشل إرسال الطلب: " + (msg || "خطأ غير معروف"));
+        toast.error("فشل إرسال الطلب: " + (msg || details || "خطأ غير معروف"));
       }
     } finally {
       setSubmitting(false);
