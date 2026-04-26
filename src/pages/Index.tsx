@@ -120,23 +120,24 @@ const Index = () => {
 
     setSubmitting(true);
     try {
-      const { data: order, error: orderErr } = await supabase
+      const orderId = crypto.randomUUID();
+
+      const { error: orderErr } = await supabase
         .from("orders")
         .insert({
+          id: orderId,
           customer_name: validatedCustomer.name,
           customer_phone: validatedCustomer.phone,
           customer_address: validatedCustomer.address,
           notes: validatedCustomer.notes || null,
           total_iqd: totalPrice,
           status: "new",
-        })
-        .select()
-        .single();
+        });
 
       if (orderErr) throw orderErr;
 
       const items = cart.map((c) => ({
-        order_id: order.id,
+        order_id: orderId,
         product_name: c.name,
         category: c.category,
         unit: c.unit,
