@@ -438,6 +438,14 @@ const Admin = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <a
+              href={`tel:${STORE_PHONE_TEL}`}
+              className="hidden md:inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+              dir="ltr"
+            >
+              📞 {STORE_PHONE}
+            </a>
+            <span className="hidden md:inline text-xs text-muted-foreground">📍 {STORE_LOCATION}</span>
             <Button asChild variant="outline" size="sm">
               <Link to="/"><ArrowRight className="h-4 w-4 ml-1" />المتجر</Link>
             </Button>
