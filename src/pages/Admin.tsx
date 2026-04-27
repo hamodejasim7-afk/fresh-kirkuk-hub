@@ -544,9 +544,11 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="orders" onValueChange={(v) => { if (v === "archive") loadArchive(); }}>
-          <TabsList className="print:hidden">
+          <TabsList className="print:hidden flex-wrap h-auto">
             <TabsTrigger value="orders">الطلبات ({orders.length})</TabsTrigger>
+            <TabsTrigger value="pricing">التسعير</TabsTrigger>
             <TabsTrigger value="products">المنتجات</TabsTrigger>
+            <TabsTrigger value="categories">الفئات</TabsTrigger>
             <TabsTrigger value="archive" className="gap-1"><Archive className="h-3.5 w-3.5" />الأرشيف</TabsTrigger>
             <TabsTrigger value="staff">الموظفون ({staff.length})</TabsTrigger>
             <TabsTrigger value="drivers">السواق ({drivers.length})</TabsTrigger>
