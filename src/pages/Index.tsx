@@ -194,7 +194,10 @@ const Index = () => {
             <img src={freshLogo} alt="شعار فريش Fresh - متجر كركوك" className="h-12 w-auto md:h-14" />
             <div className="hidden sm:block">
               <p className="text-xs text-muted-foreground">توصيل طازج إلى باب بيتك</p>
-              <p className="text-sm font-semibold text-secondary">كركوك - العراق</p>
+              <a href={`tel:${STORE_PHONE_TEL}`} className="text-sm font-semibold text-secondary hover:text-primary block" dir="ltr">
+                📞 {STORE_PHONE}
+              </a>
+              <p className="text-xs text-muted-foreground">📍 {STORE_LOCATION}</p>
             </div>
           </div>
 
