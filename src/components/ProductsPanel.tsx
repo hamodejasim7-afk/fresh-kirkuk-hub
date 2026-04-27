@@ -161,7 +161,7 @@ export const ProductsPanel = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="الكل">كل الفئات</SelectItem>
-              {CATEGORIES.map((c) => (
+              {categoryNames.map((c) => (
                 <SelectItem key={c} value={c}>{c}</SelectItem>
               ))}
             </SelectContent>
@@ -250,7 +250,7 @@ export const ProductsPanel = () => {
                 <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    {categoryNames.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
