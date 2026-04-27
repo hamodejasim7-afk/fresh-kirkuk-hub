@@ -666,8 +666,16 @@ const Admin = () => {
             </Card>
           </TabsContent>
 
+          <TabsContent value="pricing" className="mt-4">
+            <PricingPanel />
+          </TabsContent>
+
           <TabsContent value="products" className="mt-4">
             <ProductsPanel />
+          </TabsContent>
+
+          <TabsContent value="categories" className="mt-4">
+            <CategoriesPanel />
           </TabsContent>
 
           <TabsContent value="archive" className="mt-4">
