@@ -140,6 +140,7 @@ const Index = () => {
           customer_address: validatedCustomer.address,
           notes: validatedCustomer.notes || null,
           total_iqd: totalPrice,
+          delivery_fee_iqd: deliveryFee,
           status: "new",
         });
 
@@ -303,8 +304,16 @@ const Index = () => {
 
                 {cart.length > 0 && (
                   <SheetFooter className="border-t pt-4 sm:flex-col sm:space-x-0">
-                    <div className="mb-3 flex w-full items-center justify-between text-lg">
-                      <span className="font-semibold">المجموع:</span>
+                    <div className="mb-1 flex w-full items-center justify-between text-sm">
+                      <span className="text-muted-foreground">المجموع الفرعي:</span>
+                      <span className="font-semibold">{formatIQD(subtotal)}</span>
+                    </div>
+                    <div className="mb-3 flex w-full items-center justify-between text-sm">
+                      <span className="text-muted-foreground">🚚 رسوم التوصيل:</span>
+                      <span className="font-semibold">{formatIQD(deliveryFee)}</span>
+                    </div>
+                    <div className="mb-3 flex w-full items-center justify-between text-lg border-t pt-2">
+                      <span className="font-semibold">المجموع الكلي:</span>
                       <span className="font-bold text-primary">{formatIQD(totalPrice)}</span>
                     </div>
                     <Button
