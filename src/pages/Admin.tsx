@@ -292,7 +292,14 @@ const Admin = () => {
     const newOnes = orders.filter((o) => !knownIdsRef.current.has(o.id));
     if (newOnes.length > 0) {
       playBeep();
-      toast.success(`وصل ${newOnes.length} طلب جديد!`);
+      // Visual flash: show pulsing badge for 8 seconds
+      setHasNewFlash(true);
+      setTimeout(() => setHasNewFlash(false), 8000);
+      toast.success(`🔔 وصل ${newOnes.length} طلب جديد!`, { duration: 6000 });
+      // Update document title to alert when tab is in background
+      const originalTitle = document.title;
+      document.title = `🔔 طلب جديد! — ${originalTitle}`;
+      setTimeout(() => { document.title = originalTitle; }, 8000);
       if (autoSend && storePhone.trim()) {
         // Wait briefly so order_items load too
         setTimeout(() => {
