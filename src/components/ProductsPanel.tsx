@@ -20,8 +20,8 @@ import {
 import { Plus, Pencil, Trash2, Upload, Package } from "lucide-react";
 import { toast } from "sonner";
 import { formatIQD } from "@/lib/format";
+import { useCategories } from "@/hooks/useCategories";
 
-const CATEGORIES = ["خضار وفواكه", "لحوم", "أسماك", "دجاج"];
 const UNITS = ["كغم", "حبة", "ربطة", "علبة", "لتر"];
 
 interface FormState {
