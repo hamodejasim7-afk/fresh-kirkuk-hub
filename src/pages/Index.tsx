@@ -402,7 +402,7 @@ const Index = () => {
       {/* Categories */}
       <section className="container mx-auto px-4 py-6">
         <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map((c) => (
+          {allCategories.map((c) => (
             <Button key={c} variant={activeCat === c ? "default" : "outline"} onClick={() => setActiveCat(c)} className="rounded-full">
               {c}
             </Button>
