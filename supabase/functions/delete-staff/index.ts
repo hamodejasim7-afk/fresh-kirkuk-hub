@@ -35,7 +35,13 @@ Deno.serve(async (req) => {
       _user_id: userData.user.id,
       _role: "admin",
     });
-    if (!isAdmin) return json({ error: "Forbidden: admin only" }, 403);
+    const { data: isAccountant } = await admin.rpc("has_role", {
+      _user_id: userData.user.id,
+      _role: "accountant",
+    });
+    if (!isAdmin && !isAccountant) {
+      return json({ error: "Forbidden" }, 403);
+    }
 
     const body = await req.json().catch(() => ({}));
     const target = (body.user_id ?? "").trim();
@@ -44,6 +50,18 @@ Deno.serve(async (req) => {
     }
     if (target === userData.user.id) {
       return json({ error: "لا يمكنك حذف حسابك الخاص" }, 400);
+    }
+
+    // Accountants can only delete drivers (not admins or other accountants)
+    if (!isAdmin) {
+      const { data: targetRoles } = await admin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", target);
+      const roles = (targetRoles ?? []).map((r: { role: string }) => r.role);
+      if (roles.some((r) => r === "admin" || r === "accountant")) {
+        return json({ error: "المحاسب يستطيع حذف السائقين فقط" }, 403);
+      }
     }
 
     // Unassign any orders first to avoid leaving dangling driver_id

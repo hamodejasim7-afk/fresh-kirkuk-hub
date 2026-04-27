@@ -8,7 +8,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-type Role = "admin" | "driver";
+type Role = "admin" | "driver" | "accountant";
 
 interface Body {
   email?: string;
@@ -47,12 +47,19 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
     // Check role using has_role function via service-role
-    const { data: isAdminData, error: roleErr } = await admin.rpc("has_role", {
+    const { data: isAdminData } = await admin.rpc("has_role", {
       _user_id: userData.user.id,
       _role: "admin",
     });
-    if (roleErr || !isAdminData) {
-      return json({ error: "Forbidden: admin only" }, 403);
+    const { data: isAccountantData } = await admin.rpc("has_role", {
+      _user_id: userData.user.id,
+      _role: "accountant",
+    });
+    const isAdmin = !!isAdminData;
+    const isAccountant = !!isAccountantData;
+
+    if (!isAdmin && !isAccountant) {
+      return json({ error: "Forbidden: admin or accountant only" }, 403);
     }
 
     // 2) Validate body
@@ -69,8 +76,12 @@ Deno.serve(async (req) => {
     if (!password || password.length < 6) {
       return json({ error: "كلمة السر يجب أن تكون 6 أحرف فأكثر" }, 400);
     }
-    if (role !== "admin" && role !== "driver") {
-      return json({ error: "الدور يجب أن يكون admin أو driver" }, 400);
+    if (role !== "admin" && role !== "driver" && role !== "accountant") {
+      return json({ error: "الدور غير صالح" }, 400);
+    }
+    // Accountants can only create drivers
+    if (!isAdmin && role !== "driver") {
+      return json({ error: "المحاسب يستطيع إنشاء سائقين فقط" }, 403);
     }
     if (full_name.length > 100 || phone.length > 25) {
       return json({ error: "بيانات غير صالحة" }, 400);

@@ -26,7 +26,7 @@ import { formatIQD } from "@/lib/format";
 import { toast } from "sonner";
 import {
   Printer, RotateCcw, Calendar, TrendingUp, Users, Package, LogOut, ArrowRight, UserPlus,
-  MessageCircle, Settings, Bell, BellOff, Store, PowerOff, Download, Archive, Undo2,
+  MessageCircle, Settings, Bell, BellOff, Store, PowerOff, Download, Archive, Undo2, Trash2, FileSpreadsheet,
 } from "lucide-react";
 import freshLogo from "@/assets/fresh-logo.png";
 import { buildOrderWhatsAppText, buildWhatsAppLink } from "@/lib/whatsapp";
@@ -37,6 +37,7 @@ import { ProductsPanel } from "@/components/ProductsPanel";
 import { CategoriesPanel } from "@/components/CategoriesPanel";
 import { PricingPanel } from "@/components/PricingPanel";
 import { STORE_PHONE, STORE_PHONE_TEL, STORE_LOCATION } from "@/lib/constants";
+import { exportOrdersToExcel } from "@/lib/exportExcel";
 
 interface Order {
   id: string;
@@ -74,7 +75,7 @@ interface Staff {
   id: string;
   full_name: string | null;
   phone: string | null;
-  roles: ("admin" | "driver")[];
+  roles: ("admin" | "driver" | "accountant")[];
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -94,7 +95,8 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
 };
 
 const Admin = () => {
-  const { signOut, user } = useAuth();
+  const { signOut, user, role } = useAuth();
+  const isAdmin = role === "admin";
   const [orders, setOrders] = useState<Order[]>([]);
   const [items, setItems] = useState<Record<string, OrderItem[]>>({});
   const [archivedOrders, setArchivedOrders] = useState<Order[]>([]);
@@ -102,6 +104,8 @@ const Admin = () => {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
+  // Visual flash for incoming new orders
+  const [hasNewFlash, setHasNewFlash] = useState(false);
 
   // Store WhatsApp settings (saved per-browser)
   const [storePhone, setStorePhone] = useState<string>(() => localStorage.getItem("fresh_store_phone") ?? "");
@@ -209,10 +213,10 @@ const Admin = () => {
     const { data: rolesData } = await supabase
       .from("user_roles")
       .select("user_id, role");
-    const rolesByUser = new Map<string, ("admin" | "driver")[]>();
+    const rolesByUser = new Map<string, ("admin" | "driver" | "accountant")[]>();
     (rolesData ?? []).forEach((r) => {
       const arr = rolesByUser.get(r.user_id) ?? [];
-      arr.push(r.role as "admin" | "driver");
+      arr.push(r.role as "admin" | "driver" | "accountant");
       rolesByUser.set(r.user_id, arr);
     });
     const allIds = Array.from(rolesByUser.keys());
@@ -288,7 +292,14 @@ const Admin = () => {
     const newOnes = orders.filter((o) => !knownIdsRef.current.has(o.id));
     if (newOnes.length > 0) {
       playBeep();
-      toast.success(`وصل ${newOnes.length} طلب جديد!`);
+      // Visual flash: show pulsing badge for 8 seconds
+      setHasNewFlash(true);
+      setTimeout(() => setHasNewFlash(false), 8000);
+      toast.success(`🔔 وصل ${newOnes.length} طلب جديد!`, { duration: 6000 });
+      // Update document title to alert when tab is in background
+      const originalTitle = document.title;
+      document.title = `🔔 طلب جديد! — ${originalTitle}`;
+      setTimeout(() => { document.title = originalTitle; }, 8000);
       if (autoSend && storePhone.trim()) {
         // Wait briefly so order_items load too
         setTimeout(() => {
@@ -410,8 +421,13 @@ const Admin = () => {
   };
 
   const resetSales = async () => {
-    // Backup CSV first (auto)
-    exportOrdersCSV(orders, items, `fresh-backup-${new Date().toISOString().slice(0,10)}.csv`);
+    // Backup XLSX first (auto)
+    const today = new Date().toISOString().slice(0, 10);
+    try {
+      exportOrdersToExcel(orders, items, `fresh-backup-${today}.xlsx`);
+    } catch (e) {
+      console.error(e);
+    }
     const { error } = await supabase
       .from("orders")
       .update({ archived_at: new Date().toISOString() })
@@ -419,10 +435,57 @@ const Admin = () => {
     if (error) {
       toast.error("فشل التصفير: " + error.message);
     } else {
-      toast.success("تم تصفير المبيعات وأرشفة الطلبات (مع نسخة احتياطية)");
+      toast.success("تم تصفير المبيعات وأرشفة الطلبات (مع نسخة احتياطية Excel)");
       loadData();
       loadArchive();
     }
+  };
+
+  // Permanently delete entire archive (admin only) — exports XLSX first
+  const purgeArchive = async () => {
+    if (!isAdmin) {
+      toast.error("هذه العملية للمدير فقط");
+      return;
+    }
+    // Make sure we have the latest archive loaded
+    await loadArchive();
+    if (archivedOrders.length === 0) {
+      toast.error("لا يوجد أرشيف لتصفيره");
+      return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    try {
+      exportOrdersToExcel(
+        archivedOrders,
+        archivedItems,
+        `fresh-archive-FINAL-${today}.xlsx`,
+      );
+    } catch (e) {
+      console.error(e);
+      toast.error("فشل تصدير التقرير — تم إلغاء التصفير");
+      return;
+    }
+    // Delete archived orders (order_items will cascade via FK)
+    const ids = archivedOrders.map((o) => o.id);
+    const { error: delItemsErr } = await supabase
+      .from("order_items")
+      .delete()
+      .in("order_id", ids);
+    if (delItemsErr) {
+      toast.error("فشل حذف عناصر الأرشيف: " + delItemsErr.message);
+      return;
+    }
+    const { error: delErr } = await supabase
+      .from("orders")
+      .delete()
+      .in("id", ids);
+    if (delErr) {
+      toast.error("فشل حذف الأرشيف: " + delErr.message);
+      return;
+    }
+    toast.success(`تم تصفير الأرشيف بالكامل (${ids.length} طلب) — مع نسخة Excel`);
+    setArchivedOrders([]);
+    setArchivedItems({});
   };
 
   return (
@@ -433,7 +496,17 @@ const Admin = () => {
           <div className="flex items-center gap-3">
             <img src={freshLogo} alt="فريش Fresh" className="h-10 w-auto" />
             <div>
-              <h1 className="text-lg font-bold text-secondary">لوحة الإدارة</h1>
+              <h1 className="text-lg font-bold text-secondary flex items-center gap-2">
+                لوحة الإدارة
+                <Badge variant={isAdmin ? "default" : "secondary"} className="text-[10px]">
+                  {isAdmin ? "مدير" : "محاسب"}
+                </Badge>
+                {hasNewFlash && (
+                  <Badge className="animate-pulse bg-destructive text-destructive-foreground gap-1">
+                    <Bell className="h-3 w-3" />طلب جديد!
+                  </Badge>
+                )}
+              </h1>
               <p className="text-xs text-muted-foreground">{user?.email}</p>
             </div>
           </div>
@@ -520,35 +593,37 @@ const Admin = () => {
           </Button>
 
           <Button
-            onClick={() => exportOrdersCSV(orders, items, `fresh-active-${new Date().toISOString().slice(0,10)}.csv`)}
+            onClick={() => exportOrdersToExcel(orders, items, `fresh-active-${new Date().toISOString().slice(0,10)}.xlsx`)}
             variant="outline" className="gap-2" disabled={orders.length === 0}
           >
-            <Download className="h-4 w-4" />نسخة احتياطية CSV
+            <FileSpreadsheet className="h-4 w-4" />تصدير Excel
           </Button>
 
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" className="gap-2" disabled={orders.length === 0}>
-                <RotateCcw className="h-4 w-4" />تصفير المبيعات
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent dir="rtl">
-              <AlertDialogHeader>
-                <AlertDialogTitle>تأكيد تصفير المبيعات</AlertDialogTitle>
-                <AlertDialogDescription>
-                  سيتم أرشفة جميع الطلبات الحالية ({orders.length} طلب) وإعادة تصفير العدادات.
-                  <br />✅ <strong>سيتم تنزيل نسخة احتياطية CSV تلقائياً</strong> قبل التصفير.
-                  <br />📦 الطلبات تُحفظ في تبويب "الأرشيف" ويمكن استعادتها لاحقاً.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                <AlertDialogAction onClick={resetSales} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  نعم، صفّر المبيعات
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {isAdmin && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="gap-2" disabled={orders.length === 0}>
+                  <RotateCcw className="h-4 w-4" />تصفير المبيعات
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent dir="rtl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>تأكيد تصفير المبيعات</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    سيتم أرشفة جميع الطلبات الحالية ({orders.length} طلب) وإعادة تصفير العدادات.
+                    <br />✅ <strong>سيتم تنزيل نسخة احتياطية Excel تلقائياً</strong> قبل التصفير.
+                    <br />📦 الطلبات تُحفظ في تبويب "الأرشيف" ويمكن استعادتها لاحقاً.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                  <AlertDialogAction onClick={resetSales} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    نعم، صفّر المبيعات
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
 
         <Tabs defaultValue="orders" onValueChange={(v) => { if (v === "archive") loadArchive(); }}>
@@ -695,15 +770,21 @@ const Admin = () => {
                   </h3>
                   <p className="text-xs text-muted-foreground">آخر 500 طلب مؤرشف — يمكن الاستعادة أو التصدير</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Button onClick={loadArchive} variant="outline" size="sm">تحديث</Button>
                   <Button
-                    onClick={() => exportOrdersCSV(archivedOrders, archivedItems, `fresh-archive-${new Date().toISOString().slice(0,10)}.csv`)}
+                    onClick={() => exportOrdersToExcel(archivedOrders, archivedItems, `fresh-archive-${new Date().toISOString().slice(0,10)}.xlsx`)}
                     variant="outline" size="sm" className="gap-1"
                     disabled={archivedOrders.length === 0}
                   >
-                    <Download className="h-3.5 w-3.5" />تصدير CSV
+                    <FileSpreadsheet className="h-3.5 w-3.5" />تصدير Excel
                   </Button>
+                  {isAdmin && (
+                    <PurgeArchiveButton
+                      count={archivedOrders.length}
+                      onConfirm={purgeArchive}
+                    />
+                  )}
                 </div>
               </div>
               {archivedOrders.length === 0 ? (
@@ -748,7 +829,7 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="staff" className="mt-4">
-            <StaffPanel staff={staff} reload={loadData} currentUserId={user?.id ?? ""} />
+            <StaffPanel staff={staff} reload={loadData} currentUserId={user?.id ?? ""} isAdmin={isAdmin} />
           </TabsContent>
 
           <TabsContent value="drivers" className="mt-4">
@@ -757,6 +838,81 @@ const Admin = () => {
         </Tabs>
       </main>
     </div>
+  );
+};
+
+// Double-confirmation button for permanently purging the archive
+const PurgeArchiveButton = ({ count, onConfirm }: { count: number; onConfirm: () => void }) => {
+  const [step, setStep] = useState<"closed" | "first" | "second">("closed");
+  const [confirmText, setConfirmText] = useState("");
+
+  const reset = () => {
+    setStep("closed");
+    setConfirmText("");
+  };
+
+  return (
+    <>
+      <Button
+        size="sm"
+        variant="destructive"
+        className="gap-1"
+        disabled={count === 0}
+        onClick={() => setStep("first")}
+      >
+        <Trash2 className="h-3.5 w-3.5" />تصفير الأرشيف بالكامل
+      </Button>
+
+      <AlertDialog open={step === "first"} onOpenChange={(o) => !o && reset()}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>⚠️ تحذير: حذف نهائي للأرشيف</AlertDialogTitle>
+            <AlertDialogDescription>
+              ستقوم بحذف <strong>{count} طلب مؤرشف</strong> نهائياً ولا يمكن التراجع.
+              <br />✅ سيتم تنزيل تقرير Excel كامل تلقائياً قبل الحذف.
+              <br />⛔ بعد الحذف لن تتمكن من استعادة هذه الطلبات أبداً.
+              <br /><br />هل تريد المتابعة للخطوة الثانية من التأكيد؟
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={reset}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => setStep("second")}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              متابعة
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={step === "second"} onOpenChange={(o) => !o && reset()}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد نهائي</AlertDialogTitle>
+            <AlertDialogDescription>
+              للتأكيد النهائي، اكتب كلمة <strong>تصفير</strong> في الحقل أدناه ثم اضغط حذف.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="اكتب: تصفير"
+            className="my-2"
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={reset}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={confirmText.trim() !== "تصفير"}
+              onClick={() => { onConfirm(); reset(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+            >
+              نعم، احذف الأرشيف نهائياً
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 
@@ -883,16 +1039,18 @@ const StaffPanel = ({
   staff,
   reload,
   currentUserId,
+  isAdmin,
 }: {
   staff: Staff[];
   reload: () => void;
   currentUserId: string;
+  isAdmin: boolean;
 }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const [role, setRole] = useState<"driver" | "admin">("driver");
+  const [role, setRole] = useState<"driver" | "admin" | "accountant">("driver");
   const [busy, setBusy] = useState(false);
 
   const createStaff = async (e: React.FormEvent) => {
@@ -920,7 +1078,8 @@ const StaffPanel = ({
       toast.error((data as any)?.error ?? error?.message ?? "فشل إنشاء الحساب");
       return;
     }
-    toast.success(`تم إنشاء حساب ${role === "admin" ? "المدير" : "السائق"} بنجاح`);
+    const roleLabel = role === "admin" ? "المدير" : role === "accountant" ? "المحاسب" : "السائق";
+    toast.success(`تم إنشاء حساب ${roleLabel} بنجاح`);
     setEmail("");
     setPassword("");
     setFullName("");
@@ -1005,13 +1164,17 @@ const StaffPanel = ({
           </div>
           <div className="space-y-1">
             <Label>الدور *</Label>
-            <Select value={role} onValueChange={(v) => setRole(v as "driver" | "admin")}>
+            <Select value={role} onValueChange={(v) => setRole(v as "driver" | "admin" | "accountant")}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="driver">سائق توصيل</SelectItem>
-                <SelectItem value="admin">مدير</SelectItem>
+                {isAdmin && <SelectItem value="accountant">محاسب</SelectItem>}
+                {isAdmin && <SelectItem value="admin">مدير</SelectItem>}
               </SelectContent>
             </Select>
+            {!isAdmin && (
+              <p className="text-[10px] text-muted-foreground">المحاسب يستطيع إنشاء سائقين فقط</p>
+            )}
           </div>
           <div className="flex items-end">
             <Button type="submit" disabled={busy} className="w-full gap-2">
@@ -1055,42 +1218,55 @@ const StaffPanel = ({
                     <TableCell>
                       <div className="flex gap-1 flex-wrap">
                         {s.roles.map((r) => (
-                          <Badge key={r} variant={r === "admin" ? "default" : "secondary"}>
-                            {r === "admin" ? "مدير" : "سائق"}
+                          <Badge
+                            key={r}
+                            variant={r === "admin" ? "default" : r === "accountant" ? "outline" : "secondary"}
+                          >
+                            {r === "admin" ? "مدير" : r === "accountant" ? "محاسب" : "سائق"}
                           </Badge>
                         ))}
                       </div>
                     </TableCell>
                     <TableCell>
-                      {s.id === currentUserId ? (
-                        <span className="text-xs text-muted-foreground">(أنت)</span>
-                      ) : (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="destructive" disabled={busy}>
-                              حذف
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent dir="rtl">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>تأكيد حذف الموظف</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                سيتم حذف حساب {s.full_name || "هذا الموظف"} نهائياً ولن يستطيع الدخول للنظام.
-                                إذا كان سائقاً، ستُلغى ربط طلباته الحالية.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => removeStaff(s.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                نعم، احذف
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
+                      {(() => {
+                        if (s.id === currentUserId) {
+                          return <span className="text-xs text-muted-foreground">(أنت)</span>;
+                        }
+                        // Accountants can only delete drivers
+                        const isPureDriver =
+                          s.roles.length > 0 &&
+                          s.roles.every((r) => r === "driver");
+                        if (!isAdmin && !isPureDriver) {
+                          return <span className="text-xs text-muted-foreground">—</span>;
+                        }
+                        return (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="sm" variant="destructive" disabled={busy}>
+                                حذف
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent dir="rtl">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>تأكيد حذف الموظف</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  سيتم حذف حساب {s.full_name || "هذا الموظف"} نهائياً ولن يستطيع الدخول للنظام.
+                                  إذا كان سائقاً، ستُلغى ربط طلباته الحالية.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => removeStaff(s.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  نعم، احذف
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        );
+                      })()}
                     </TableCell>
                   </TableRow>
                 ))
