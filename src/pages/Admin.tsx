@@ -421,8 +421,13 @@ const Admin = () => {
   };
 
   const resetSales = async () => {
-    // Backup CSV first (auto)
-    exportOrdersCSV(orders, items, `fresh-backup-${new Date().toISOString().slice(0,10)}.csv`);
+    // Backup XLSX first (auto)
+    const today = new Date().toISOString().slice(0, 10);
+    try {
+      exportOrdersToExcel(orders, items, `fresh-backup-${today}.xlsx`);
+    } catch (e) {
+      console.error(e);
+    }
     const { error } = await supabase
       .from("orders")
       .update({ archived_at: new Date().toISOString() })
@@ -430,10 +435,57 @@ const Admin = () => {
     if (error) {
       toast.error("فشل التصفير: " + error.message);
     } else {
-      toast.success("تم تصفير المبيعات وأرشفة الطلبات (مع نسخة احتياطية)");
+      toast.success("تم تصفير المبيعات وأرشفة الطلبات (مع نسخة احتياطية Excel)");
       loadData();
       loadArchive();
     }
+  };
+
+  // Permanently delete entire archive (admin only) — exports XLSX first
+  const purgeArchive = async () => {
+    if (!isAdmin) {
+      toast.error("هذه العملية للمدير فقط");
+      return;
+    }
+    // Make sure we have the latest archive loaded
+    await loadArchive();
+    if (archivedOrders.length === 0) {
+      toast.error("لا يوجد أرشيف لتصفيره");
+      return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    try {
+      exportOrdersToExcel(
+        archivedOrders,
+        archivedItems,
+        `fresh-archive-FINAL-${today}.xlsx`,
+      );
+    } catch (e) {
+      console.error(e);
+      toast.error("فشل تصدير التقرير — تم إلغاء التصفير");
+      return;
+    }
+    // Delete archived orders (order_items will cascade via FK)
+    const ids = archivedOrders.map((o) => o.id);
+    const { error: delItemsErr } = await supabase
+      .from("order_items")
+      .delete()
+      .in("order_id", ids);
+    if (delItemsErr) {
+      toast.error("فشل حذف عناصر الأرشيف: " + delItemsErr.message);
+      return;
+    }
+    const { error: delErr } = await supabase
+      .from("orders")
+      .delete()
+      .in("id", ids);
+    if (delErr) {
+      toast.error("فشل حذف الأرشيف: " + delErr.message);
+      return;
+    }
+    toast.success(`تم تصفير الأرشيف بالكامل (${ids.length} طلب) — مع نسخة Excel`);
+    setArchivedOrders([]);
+    setArchivedItems({});
   };
 
   return (
