@@ -841,7 +841,81 @@ const Admin = () => {
   );
 };
 
-const StatCard = ({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub: string }) => (
+// Double-confirmation button for permanently purging the archive
+const PurgeArchiveButton = ({ count, onConfirm }: { count: number; onConfirm: () => void }) => {
+  const [step, setStep] = useState<"closed" | "first" | "second">("closed");
+  const [confirmText, setConfirmText] = useState("");
+
+  const reset = () => {
+    setStep("closed");
+    setConfirmText("");
+  };
+
+  return (
+    <>
+      <Button
+        size="sm"
+        variant="destructive"
+        className="gap-1"
+        disabled={count === 0}
+        onClick={() => setStep("first")}
+      >
+        <Trash2 className="h-3.5 w-3.5" />تصفير الأرشيف بالكامل
+      </Button>
+
+      <AlertDialog open={step === "first"} onOpenChange={(o) => !o && reset()}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>⚠️ تحذير: حذف نهائي للأرشيف</AlertDialogTitle>
+            <AlertDialogDescription>
+              ستقوم بحذف <strong>{count} طلب مؤرشف</strong> نهائياً ولا يمكن التراجع.
+              <br />✅ سيتم تنزيل تقرير Excel كامل تلقائياً قبل الحذف.
+              <br />⛔ بعد الحذف لن تتمكن من استعادة هذه الطلبات أبداً.
+              <br /><br />هل تريد المتابعة للخطوة الثانية من التأكيد؟
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={reset}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => setStep("second")}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              متابعة
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={step === "second"} onOpenChange={(o) => !o && reset()}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد نهائي</AlertDialogTitle>
+            <AlertDialogDescription>
+              للتأكيد النهائي، اكتب كلمة <strong>تصفير</strong> في الحقل أدناه ثم اضغط حذف.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="اكتب: تصفير"
+            className="my-2"
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={reset}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={confirmText.trim() !== "تصفير"}
+              onClick={() => { onConfirm(); reset(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+            >
+              نعم، احذف الأرشيف نهائياً
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
   <Card className="p-4">
     <div className="flex items-start justify-between">
       <div>
