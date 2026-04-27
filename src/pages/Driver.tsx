@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatIQD } from "@/lib/format";
 import { toast } from "sonner";
-import { LogOut, Phone, MapPin, ArrowRight, Truck } from "lucide-react";
+import { LogOut, Phone, MapPin, ArrowRight, Truck, Bell, BellOff } from "lucide-react";
 import freshLogo from "@/assets/fresh-logo.png";
 
 interface Order {
@@ -44,6 +44,38 @@ const Driver = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [items, setItems] = useState<Record<string, OrderItem[]>>({});
   const [loading, setLoading] = useState(true);
+  const [soundOn, setSoundOn] = useState<boolean>(() => localStorage.getItem("fresh_driver_sound") !== "0");
+  const [hasNewFlash, setHasNewFlash] = useState(false);
+  const knownIdsRef = useRef<Set<string>>(new Set());
+  const initializedRef = useRef(false);
+
+  useEffect(() => { localStorage.setItem("fresh_driver_sound", soundOn ? "1" : "0"); }, [soundOn]);
+
+  const playBeep = () => {
+    if (!soundOn) return;
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const notes = [
+        { freq: 1046, start: 0.0, dur: 0.18 },
+        { freq: 1318, start: 0.18, dur: 0.18 },
+        { freq: 1568, start: 0.36, dur: 0.34 },
+      ];
+      notes.forEach(({ freq, start, dur }) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = "triangle";
+        o.frequency.value = freq;
+        o.connect(g);
+        g.connect(ctx.destination);
+        const t0 = ctx.currentTime + start;
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.35, t0 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+        o.start(t0);
+        o.stop(t0 + dur + 0.05);
+      });
+    } catch {}
+  };
 
   const load = async () => {
     setLoading(true);
@@ -80,6 +112,32 @@ const Driver = () => {
     return () => { supabase.removeChannel(channel); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // Detect newly assigned orders → beep + visual flash
+  useEffect(() => {
+    if (orders.length === 0) {
+      knownIdsRef.current = new Set();
+      return;
+    }
+    const currentIds = new Set(orders.map((o) => o.id));
+    if (!initializedRef.current) {
+      knownIdsRef.current = currentIds;
+      initializedRef.current = true;
+      return;
+    }
+    const newOnes = orders.filter((o) => !knownIdsRef.current.has(o.id));
+    if (newOnes.length > 0) {
+      playBeep();
+      setHasNewFlash(true);
+      setTimeout(() => setHasNewFlash(false), 8000);
+      toast.success(`🔔 تم تعيين ${newOnes.length} طلب جديد لك!`, { duration: 6000 });
+      const original = document.title;
+      document.title = `🔔 طلب جديد! — ${original}`;
+      setTimeout(() => { document.title = original; }, 8000);
+    }
+    knownIdsRef.current = currentIds;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders]);
 
   const updateStatus = async (id: string, status: string) => {
     const { error } = await supabase.from("orders").update({ status }).eq("id", id);
