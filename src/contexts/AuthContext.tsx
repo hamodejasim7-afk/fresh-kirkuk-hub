@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-type Role = "admin" | "driver" | null;
+type Role = "admin" | "accountant" | "driver" | null;
 
 interface AuthCtx {
   user: User | null;
@@ -36,9 +36,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setRole(null);
       return;
     }
-    // Prefer admin over driver
+    // Priority: admin > accountant > driver
     const roles = data.map((r) => r.role);
     if (roles.includes("admin")) setRole("admin");
+    else if (roles.includes("accountant")) setRole("accountant");
     else if (roles.includes("driver")) setRole("driver");
     else setRole(null);
   };
