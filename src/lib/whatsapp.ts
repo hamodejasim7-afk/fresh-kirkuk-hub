@@ -30,7 +30,11 @@ export const buildOrderWhatsAppText = (order: OrderRow, items: ItemRow[]) => {
     );
   });
   lines.push("━━━━━━━━━━━━━━━");
-  lines.push(`💰 *المجموع: ${fmtIQD(order.total_iqd)}*`);
+  const subtotal = items.reduce((s, it) => s + it.price_iqd * Number(it.quantity), 0);
+  const fee = order.delivery_fee_iqd ?? 0;
+  lines.push(`المجموع الفرعي: ${fmtIQD(subtotal)}`);
+  if (fee > 0) lines.push(`🚚 توصيل: ${fmtIQD(fee)}`);
+  lines.push(`💰 *المجموع الكلي: ${fmtIQD(order.total_iqd)}*`);
   return lines.join("\n");
 };
 

@@ -42,6 +42,7 @@ interface Order {
   customer_address: string;
   notes: string | null;
   total_iqd: number;
+  delivery_fee_iqd: number;
   status: string;
   driver_id: string | null;
   archived_at: string | null;
