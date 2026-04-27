@@ -482,8 +482,10 @@ const Index = () => {
           </div>
           <div className="space-y-2">
             <h3 className="font-semibold">تواصل معنا</h3>
-            <p className="flex items-center gap-2 text-sm opacity-90"><Phone className="h-4 w-4" /> 07XX XXX XXXX</p>
-            <p className="flex items-center gap-2 text-sm opacity-90"><MapPin className="h-4 w-4" /> كركوك - العراق</p>
+            <a href={`tel:${STORE_PHONE_TEL}`} className="flex items-center gap-2 text-sm opacity-90 hover:opacity-100" dir="ltr">
+              <Phone className="h-4 w-4" /> {STORE_PHONE}
+            </a>
+            <p className="flex items-center gap-2 text-sm opacity-90"><MapPin className="h-4 w-4" /> {STORE_LOCATION}</p>
           </div>
           <div className="space-y-2">
             <h3 className="font-semibold">تابعنا</h3>
