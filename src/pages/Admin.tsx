@@ -26,7 +26,7 @@ import { formatIQD } from "@/lib/format";
 import { toast } from "sonner";
 import {
   Printer, RotateCcw, Calendar, TrendingUp, Users, Package, LogOut, ArrowRight, UserPlus,
-  MessageCircle, Settings, Bell, BellOff, Store, PowerOff, Download, Archive, Undo2,
+  MessageCircle, Settings, Bell, BellOff, Store, PowerOff, Download, Archive, Undo2, Trash2, FileSpreadsheet,
 } from "lucide-react";
 import freshLogo from "@/assets/fresh-logo.png";
 import { buildOrderWhatsAppText, buildWhatsAppLink } from "@/lib/whatsapp";
@@ -37,6 +37,7 @@ import { ProductsPanel } from "@/components/ProductsPanel";
 import { CategoriesPanel } from "@/components/CategoriesPanel";
 import { PricingPanel } from "@/components/PricingPanel";
 import { STORE_PHONE, STORE_PHONE_TEL, STORE_LOCATION } from "@/lib/constants";
+import { exportOrdersToExcel } from "@/lib/exportExcel";
 
 interface Order {
   id: string;
@@ -74,7 +75,7 @@ interface Staff {
   id: string;
   full_name: string | null;
   phone: string | null;
-  roles: ("admin" | "driver")[];
+  roles: ("admin" | "driver" | "accountant")[];
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -94,7 +95,8 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
 };
 
 const Admin = () => {
-  const { signOut, user } = useAuth();
+  const { signOut, user, role } = useAuth();
+  const isAdmin = role === "admin";
   const [orders, setOrders] = useState<Order[]>([]);
   const [items, setItems] = useState<Record<string, OrderItem[]>>({});
   const [archivedOrders, setArchivedOrders] = useState<Order[]>([]);
@@ -102,6 +104,8 @@ const Admin = () => {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
+  // Visual flash for incoming new orders
+  const [hasNewFlash, setHasNewFlash] = useState(false);
 
   // Store WhatsApp settings (saved per-browser)
   const [storePhone, setStorePhone] = useState<string>(() => localStorage.getItem("fresh_store_phone") ?? "");
@@ -209,10 +213,10 @@ const Admin = () => {
     const { data: rolesData } = await supabase
       .from("user_roles")
       .select("user_id, role");
-    const rolesByUser = new Map<string, ("admin" | "driver")[]>();
+    const rolesByUser = new Map<string, ("admin" | "driver" | "accountant")[]>();
     (rolesData ?? []).forEach((r) => {
       const arr = rolesByUser.get(r.user_id) ?? [];
-      arr.push(r.role as "admin" | "driver");
+      arr.push(r.role as "admin" | "driver" | "accountant");
       rolesByUser.set(r.user_id, arr);
     });
     const allIds = Array.from(rolesByUser.keys());
