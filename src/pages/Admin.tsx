@@ -600,8 +600,14 @@ const Admin = () => {
                                       <span className="font-semibold">{formatIQD(it.price_iqd * Number(it.quantity))}</span>
                                     </div>
                                   ))}
+                                  {o.delivery_fee_iqd > 0 && (
+                                    <div className="flex justify-between text-sm pt-1">
+                                      <span>🚚 رسوم التوصيل</span>
+                                      <span className="font-semibold">{formatIQD(o.delivery_fee_iqd)}</span>
+                                    </div>
+                                  )}
                                   <div className="flex justify-between pt-2 font-bold text-primary">
-                                    <span>المجموع</span>
+                                    <span>المجموع الكلي</span>
                                     <span>{formatIQD(o.total_iqd)}</span>
                                   </div>
                                   {o.notes && (
