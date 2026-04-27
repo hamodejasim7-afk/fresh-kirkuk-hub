@@ -360,6 +360,20 @@ const Index = () => {
               <p className="text-muted-foreground">العنوان</p>
               <p className="font-medium text-foreground">{customer.address.trim()}</p>
             </div>
+            <div className="border-t pt-2 space-y-1">
+              <p className="text-muted-foreground">المنتجات ({totalQty})</p>
+              {cart.map((it) => (
+                <div key={it.id} className="flex justify-between text-xs">
+                  <span>{it.name} × {it.qty}</span>
+                  <span>{formatIQD(it.price_iqd * it.qty)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="border-t pt-2 space-y-1">
+              <div className="flex justify-between"><span className="text-muted-foreground">المجموع الفرعي</span><span>{formatIQD(subtotal)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">🚚 رسوم التوصيل</span><span>{formatIQD(deliveryFee)}</span></div>
+              <div className="flex justify-between font-bold text-primary text-base"><span>المجموع الكلي</span><span>{formatIQD(totalPrice)}</span></div>
+            </div>
           </div>
 
           <DialogFooter className="gap-2 sm:flex-row-reverse sm:justify-start sm:space-x-0">
