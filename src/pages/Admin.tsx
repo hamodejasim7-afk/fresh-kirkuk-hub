@@ -829,7 +829,7 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="staff" className="mt-4">
-            <StaffPanel staff={staff} reload={loadData} currentUserId={user?.id ?? ""} />
+            <StaffPanel staff={staff} reload={loadData} currentUserId={user?.id ?? ""} isAdmin={isAdmin} />
           </TabsContent>
 
           <TabsContent value="drivers" className="mt-4">
