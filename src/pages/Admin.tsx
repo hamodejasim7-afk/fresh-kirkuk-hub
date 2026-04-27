@@ -496,7 +496,17 @@ const Admin = () => {
           <div className="flex items-center gap-3">
             <img src={freshLogo} alt="فريش Fresh" className="h-10 w-auto" />
             <div>
-              <h1 className="text-lg font-bold text-secondary">لوحة الإدارة</h1>
+              <h1 className="text-lg font-bold text-secondary flex items-center gap-2">
+                لوحة الإدارة
+                <Badge variant={isAdmin ? "default" : "secondary"} className="text-[10px]">
+                  {isAdmin ? "مدير" : "محاسب"}
+                </Badge>
+                {hasNewFlash && (
+                  <Badge className="animate-pulse bg-destructive text-destructive-foreground gap-1">
+                    <Bell className="h-3 w-3" />طلب جديد!
+                  </Badge>
+                )}
+              </h1>
               <p className="text-xs text-muted-foreground">{user?.email}</p>
             </div>
           </div>
