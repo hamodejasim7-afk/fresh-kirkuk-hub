@@ -1218,42 +1218,55 @@ const StaffPanel = ({
                     <TableCell>
                       <div className="flex gap-1 flex-wrap">
                         {s.roles.map((r) => (
-                          <Badge key={r} variant={r === "admin" ? "default" : "secondary"}>
-                            {r === "admin" ? "مدير" : "سائق"}
+                          <Badge
+                            key={r}
+                            variant={r === "admin" ? "default" : r === "accountant" ? "outline" : "secondary"}
+                          >
+                            {r === "admin" ? "مدير" : r === "accountant" ? "محاسب" : "سائق"}
                           </Badge>
                         ))}
                       </div>
                     </TableCell>
                     <TableCell>
-                      {s.id === currentUserId ? (
-                        <span className="text-xs text-muted-foreground">(أنت)</span>
-                      ) : (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="destructive" disabled={busy}>
-                              حذف
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent dir="rtl">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>تأكيد حذف الموظف</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                سيتم حذف حساب {s.full_name || "هذا الموظف"} نهائياً ولن يستطيع الدخول للنظام.
-                                إذا كان سائقاً، ستُلغى ربط طلباته الحالية.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => removeStaff(s.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                نعم، احذف
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
+                      {(() => {
+                        if (s.id === currentUserId) {
+                          return <span className="text-xs text-muted-foreground">(أنت)</span>;
+                        }
+                        // Accountants can only delete drivers
+                        const isPureDriver =
+                          s.roles.length > 0 &&
+                          s.roles.every((r) => r === "driver");
+                        if (!isAdmin && !isPureDriver) {
+                          return <span className="text-xs text-muted-foreground">—</span>;
+                        }
+                        return (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="sm" variant="destructive" disabled={busy}>
+                                حذف
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent dir="rtl">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>تأكيد حذف الموظف</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  سيتم حذف حساب {s.full_name || "هذا الموظف"} نهائياً ولن يستطيع الدخول للنظام.
+                                  إذا كان سائقاً، ستُلغى ربط طلباته الحالية.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => removeStaff(s.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  نعم، احذف
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        );
+                      })()}
                     </TableCell>
                   </TableRow>
                 ))
