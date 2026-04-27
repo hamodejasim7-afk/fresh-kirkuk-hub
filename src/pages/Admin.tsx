@@ -1039,16 +1039,18 @@ const StaffPanel = ({
   staff,
   reload,
   currentUserId,
+  isAdmin,
 }: {
   staff: Staff[];
   reload: () => void;
   currentUserId: string;
+  isAdmin: boolean;
 }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const [role, setRole] = useState<"driver" | "admin">("driver");
+  const [role, setRole] = useState<"driver" | "admin" | "accountant">("driver");
   const [busy, setBusy] = useState(false);
 
   const createStaff = async (e: React.FormEvent) => {
@@ -1076,7 +1078,8 @@ const StaffPanel = ({
       toast.error((data as any)?.error ?? error?.message ?? "فشل إنشاء الحساب");
       return;
     }
-    toast.success(`تم إنشاء حساب ${role === "admin" ? "المدير" : "السائق"} بنجاح`);
+    const roleLabel = role === "admin" ? "المدير" : role === "accountant" ? "المحاسب" : "السائق";
+    toast.success(`تم إنشاء حساب ${roleLabel} بنجاح`);
     setEmail("");
     setPassword("");
     setFullName("");
@@ -1161,13 +1164,17 @@ const StaffPanel = ({
           </div>
           <div className="space-y-1">
             <Label>الدور *</Label>
-            <Select value={role} onValueChange={(v) => setRole(v as "driver" | "admin")}>
+            <Select value={role} onValueChange={(v) => setRole(v as "driver" | "admin" | "accountant")}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="driver">سائق توصيل</SelectItem>
-                <SelectItem value="admin">مدير</SelectItem>
+                {isAdmin && <SelectItem value="accountant">محاسب</SelectItem>}
+                {isAdmin && <SelectItem value="admin">مدير</SelectItem>}
               </SelectContent>
             </Select>
+            {!isAdmin && (
+              <p className="text-[10px] text-muted-foreground">المحاسب يستطيع إنشاء سائقين فقط</p>
+            )}
           </div>
           <div className="flex items-end">
             <Button type="submit" disabled={busy} className="w-full gap-2">
