@@ -24,11 +24,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { useProducts, type DBProduct } from "@/hooks/useProducts";
 import { orderCustomerSchema } from "@/lib/orderValidation";
+import { useCategories } from "@/hooks/useCategories";
+import { DELIVERY_FEE_IQD, STORE_PHONE, STORE_PHONE_TEL, STORE_LOCATION } from "@/lib/constants";
 
 type CartItem = DBProduct & { qty: number };
-type Cat = "الكل" | string;
-
-const CATEGORIES: Cat[] = ["الكل", "خضار وفواكه", "لحوم", "أسماك", "دجاج"];
 
 const Index = () => {
   const { user, role, signOut } = useAuth();
