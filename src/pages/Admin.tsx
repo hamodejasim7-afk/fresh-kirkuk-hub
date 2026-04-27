@@ -770,15 +770,21 @@ const Admin = () => {
                   </h3>
                   <p className="text-xs text-muted-foreground">آخر 500 طلب مؤرشف — يمكن الاستعادة أو التصدير</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Button onClick={loadArchive} variant="outline" size="sm">تحديث</Button>
                   <Button
-                    onClick={() => exportOrdersCSV(archivedOrders, archivedItems, `fresh-archive-${new Date().toISOString().slice(0,10)}.csv`)}
+                    onClick={() => exportOrdersToExcel(archivedOrders, archivedItems, `fresh-archive-${new Date().toISOString().slice(0,10)}.xlsx`)}
                     variant="outline" size="sm" className="gap-1"
                     disabled={archivedOrders.length === 0}
                   >
-                    <Download className="h-3.5 w-3.5" />تصدير CSV
+                    <FileSpreadsheet className="h-3.5 w-3.5" />تصدير Excel
                   </Button>
+                  {isAdmin && (
+                    <PurgeArchiveButton
+                      count={archivedOrders.length}
+                      onConfirm={purgeArchive}
+                    />
+                  )}
                 </div>
               </div>
               {archivedOrders.length === 0 ? (
