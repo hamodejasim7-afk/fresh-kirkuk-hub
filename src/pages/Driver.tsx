@@ -152,11 +152,26 @@ const Driver = () => {
           <div className="flex items-center gap-3">
             <img src={freshLogo} alt="فريش Fresh" className="h-10 w-auto" />
             <div>
-              <h1 className="text-lg font-bold text-secondary flex items-center gap-2"><Truck className="h-5 w-5" />لوحة السائق</h1>
+              <h1 className="text-lg font-bold text-secondary flex items-center gap-2">
+                <Truck className="h-5 w-5" />لوحة السائق
+                {hasNewFlash && (
+                  <Badge className="animate-pulse bg-destructive text-destructive-foreground gap-1">
+                    <Bell className="h-3 w-3" />طلب جديد!
+                  </Badge>
+                )}
+              </h1>
               <p className="text-xs text-muted-foreground">{user?.email}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSoundOn(!soundOn)}
+              title={soundOn ? "إيقاف الصوت" : "تفعيل الصوت"}
+            >
+              {soundOn ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+            </Button>
             <Button asChild variant="outline" size="sm"><Link to="/"><ArrowRight className="h-4 w-4 ml-1" />المتجر</Link></Button>
             <Button onClick={signOut} variant="ghost" size="sm"><LogOut className="h-4 w-4 ml-1" />خروج</Button>
           </div>
