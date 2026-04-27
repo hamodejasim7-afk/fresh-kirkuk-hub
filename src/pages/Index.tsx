@@ -33,12 +33,18 @@ const Index = () => {
   const { user, role, signOut } = useAuth();
   const { settings: storeSettings, loading } = useStoreSettings();
   const { products } = useProducts({ onlyAvailable: true });
-  const [activeCat, setActiveCat] = useState<Cat>("الكل");
+  const { categories } = useCategories({ onlyActive: true });
+  const [activeCat, setActiveCat] = useState<string>("الكل");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [customer, setCustomer] = useState({ name: "", phone: "", address: "", notes: "" });
+
+  const allCategories = useMemo(
+    () => ["الكل", ...categories.map((c) => c.name)],
+    [categories]
+  );
 
   // Load cart from localStorage
   useEffect(() => {
@@ -57,7 +63,11 @@ const Index = () => {
   );
 
   const totalQty = cart.reduce((s, i) => s + i.qty, 0);
-  const totalPrice = cart.reduce((s, i) => s + i.qty * i.price_iqd, 0);
+  const subtotal = cart.reduce((s, i) => s + i.qty * i.price_iqd, 0);
+  const deliveryFee = cart.length > 0 ? DELIVERY_FEE_IQD : 0;
+  const totalPrice = subtotal + deliveryFee;
+
+  const getCartQty = (id: string) => cart.find((i) => i.id === id)?.qty ?? 0;
 
   const addToCart = (p: DBProduct) => {
     setCart((prev) => {
