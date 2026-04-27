@@ -38,7 +38,7 @@ interface FormState {
 
 const emptyForm: FormState = {
   name: "",
-  category: CATEGORIES[0],
+  category: "",
   price_iqd: "",
   unit: "كغم",
   emoji: "🥬",
@@ -50,6 +50,8 @@ const emptyForm: FormState = {
 
 export const ProductsPanel = () => {
   const { products, loading, reload } = useProducts();
+  const { categories } = useCategories({ onlyActive: true });
+  const categoryNames = categories.map((c) => c.name);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<DBProduct | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
