@@ -593,35 +593,37 @@ const Admin = () => {
           </Button>
 
           <Button
-            onClick={() => exportOrdersCSV(orders, items, `fresh-active-${new Date().toISOString().slice(0,10)}.csv`)}
+            onClick={() => exportOrdersToExcel(orders, items, `fresh-active-${new Date().toISOString().slice(0,10)}.xlsx`)}
             variant="outline" className="gap-2" disabled={orders.length === 0}
           >
-            <Download className="h-4 w-4" />نسخة احتياطية CSV
+            <FileSpreadsheet className="h-4 w-4" />تصدير Excel
           </Button>
 
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" className="gap-2" disabled={orders.length === 0}>
-                <RotateCcw className="h-4 w-4" />تصفير المبيعات
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent dir="rtl">
-              <AlertDialogHeader>
-                <AlertDialogTitle>تأكيد تصفير المبيعات</AlertDialogTitle>
-                <AlertDialogDescription>
-                  سيتم أرشفة جميع الطلبات الحالية ({orders.length} طلب) وإعادة تصفير العدادات.
-                  <br />✅ <strong>سيتم تنزيل نسخة احتياطية CSV تلقائياً</strong> قبل التصفير.
-                  <br />📦 الطلبات تُحفظ في تبويب "الأرشيف" ويمكن استعادتها لاحقاً.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                <AlertDialogAction onClick={resetSales} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  نعم، صفّر المبيعات
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {isAdmin && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="gap-2" disabled={orders.length === 0}>
+                  <RotateCcw className="h-4 w-4" />تصفير المبيعات
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent dir="rtl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>تأكيد تصفير المبيعات</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    سيتم أرشفة جميع الطلبات الحالية ({orders.length} طلب) وإعادة تصفير العدادات.
+                    <br />✅ <strong>سيتم تنزيل نسخة احتياطية Excel تلقائياً</strong> قبل التصفير.
+                    <br />📦 الطلبات تُحفظ في تبويب "الأرشيف" ويمكن استعادتها لاحقاً.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                  <AlertDialogAction onClick={resetSales} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    نعم، صفّر المبيعات
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
 
         <Tabs defaultValue="orders" onValueChange={(v) => { if (v === "archive") loadArchive(); }}>
