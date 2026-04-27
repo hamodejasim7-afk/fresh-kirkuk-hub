@@ -34,6 +34,9 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { ProductsPanel } from "@/components/ProductsPanel";
+import { CategoriesPanel } from "@/components/CategoriesPanel";
+import { PricingPanel } from "@/components/PricingPanel";
+import { STORE_PHONE, STORE_PHONE_TEL, STORE_LOCATION } from "@/lib/constants";
 
 interface Order {
   id: string;
@@ -42,6 +45,7 @@ interface Order {
   customer_address: string;
   notes: string | null;
   total_iqd: number;
+  delivery_fee_iqd: number;
   status: string;
   driver_id: string | null;
   archived_at: string | null;
@@ -434,6 +438,14 @@ const Admin = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <a
+              href={`tel:${STORE_PHONE_TEL}`}
+              className="hidden md:inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+              dir="ltr"
+            >
+              📞 {STORE_PHONE}
+            </a>
+            <span className="hidden md:inline text-xs text-muted-foreground">📍 {STORE_LOCATION}</span>
             <Button asChild variant="outline" size="sm">
               <Link to="/"><ArrowRight className="h-4 w-4 ml-1" />المتجر</Link>
             </Button>
@@ -540,9 +552,11 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="orders" onValueChange={(v) => { if (v === "archive") loadArchive(); }}>
-          <TabsList className="print:hidden">
+          <TabsList className="print:hidden flex-wrap h-auto">
             <TabsTrigger value="orders">الطلبات ({orders.length})</TabsTrigger>
+            <TabsTrigger value="pricing">التسعير</TabsTrigger>
             <TabsTrigger value="products">المنتجات</TabsTrigger>
+            <TabsTrigger value="categories">الفئات</TabsTrigger>
             <TabsTrigger value="archive" className="gap-1"><Archive className="h-3.5 w-3.5" />الأرشيف</TabsTrigger>
             <TabsTrigger value="staff">الموظفون ({staff.length})</TabsTrigger>
             <TabsTrigger value="drivers">السواق ({drivers.length})</TabsTrigger>
@@ -599,8 +613,14 @@ const Admin = () => {
                                       <span className="font-semibold">{formatIQD(it.price_iqd * Number(it.quantity))}</span>
                                     </div>
                                   ))}
+                                  {o.delivery_fee_iqd > 0 && (
+                                    <div className="flex justify-between text-sm pt-1">
+                                      <span>🚚 رسوم التوصيل</span>
+                                      <span className="font-semibold">{formatIQD(o.delivery_fee_iqd)}</span>
+                                    </div>
+                                  )}
                                   <div className="flex justify-between pt-2 font-bold text-primary">
-                                    <span>المجموع</span>
+                                    <span>المجموع الكلي</span>
                                     <span>{formatIQD(o.total_iqd)}</span>
                                   </div>
                                   {o.notes && (
@@ -654,8 +674,16 @@ const Admin = () => {
             </Card>
           </TabsContent>
 
+          <TabsContent value="pricing" className="mt-4">
+            <PricingPanel />
+          </TabsContent>
+
           <TabsContent value="products" className="mt-4">
             <ProductsPanel />
+          </TabsContent>
+
+          <TabsContent value="categories" className="mt-4">
+            <CategoriesPanel />
           </TabsContent>
 
           <TabsContent value="archive" className="mt-4">

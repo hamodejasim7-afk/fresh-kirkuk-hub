@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           category: string | null
@@ -62,6 +89,7 @@ export type Database = {
           customer_address: string
           customer_name: string
           customer_phone: string
+          delivery_fee_iqd: number
           driver_id: string | null
           id: string
           notes: string | null
@@ -75,6 +103,7 @@ export type Database = {
           customer_address: string
           customer_name: string
           customer_phone: string
+          delivery_fee_iqd?: number
           driver_id?: string | null
           id?: string
           notes?: string | null
@@ -88,6 +117,7 @@ export type Database = {
           customer_address?: string
           customer_name?: string
           customer_phone?: string
+          delivery_fee_iqd?: number
           driver_id?: string | null
           id?: string
           notes?: string | null

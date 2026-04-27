@@ -24,22 +24,27 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { useProducts, type DBProduct } from "@/hooks/useProducts";
 import { orderCustomerSchema } from "@/lib/orderValidation";
+import { useCategories } from "@/hooks/useCategories";
+import { DELIVERY_FEE_IQD, STORE_PHONE, STORE_PHONE_TEL, STORE_LOCATION } from "@/lib/constants";
 
 type CartItem = DBProduct & { qty: number };
-type Cat = "الكل" | string;
-
-const CATEGORIES: Cat[] = ["الكل", "خضار وفواكه", "لحوم", "أسماك", "دجاج"];
 
 const Index = () => {
   const { user, role, signOut } = useAuth();
   const { settings: storeSettings, loading } = useStoreSettings();
   const { products } = useProducts({ onlyAvailable: true });
-  const [activeCat, setActiveCat] = useState<Cat>("الكل");
+  const { categories } = useCategories({ onlyActive: true });
+  const [activeCat, setActiveCat] = useState<string>("الكل");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [customer, setCustomer] = useState({ name: "", phone: "", address: "", notes: "" });
+
+  const allCategories = useMemo(
+    () => ["الكل", ...categories.map((c) => c.name)],
+    [categories]
+  );
 
   // Load cart from localStorage
   useEffect(() => {
@@ -58,7 +63,11 @@ const Index = () => {
   );
 
   const totalQty = cart.reduce((s, i) => s + i.qty, 0);
-  const totalPrice = cart.reduce((s, i) => s + i.qty * i.price_iqd, 0);
+  const subtotal = cart.reduce((s, i) => s + i.qty * i.price_iqd, 0);
+  const deliveryFee = cart.length > 0 ? DELIVERY_FEE_IQD : 0;
+  const totalPrice = subtotal + deliveryFee;
+
+  const getCartQty = (id: string) => cart.find((i) => i.id === id)?.qty ?? 0;
 
   const addToCart = (p: DBProduct) => {
     setCart((prev) => {
@@ -131,6 +140,7 @@ const Index = () => {
           customer_address: validatedCustomer.address,
           notes: validatedCustomer.notes || null,
           total_iqd: totalPrice,
+          delivery_fee_iqd: deliveryFee,
           status: "new",
         });
 
@@ -184,7 +194,10 @@ const Index = () => {
             <img src={freshLogo} alt="شعار فريش Fresh - متجر كركوك" className="h-12 w-auto md:h-14" />
             <div className="hidden sm:block">
               <p className="text-xs text-muted-foreground">توصيل طازج إلى باب بيتك</p>
-              <p className="text-sm font-semibold text-secondary">كركوك - العراق</p>
+              <a href={`tel:${STORE_PHONE_TEL}`} className="text-sm font-semibold text-secondary hover:text-primary block" dir="ltr">
+                📞 {STORE_PHONE}
+              </a>
+              <p className="text-xs text-muted-foreground">📍 {STORE_LOCATION}</p>
             </div>
           </div>
 
@@ -294,8 +307,16 @@ const Index = () => {
 
                 {cart.length > 0 && (
                   <SheetFooter className="border-t pt-4 sm:flex-col sm:space-x-0">
-                    <div className="mb-3 flex w-full items-center justify-between text-lg">
-                      <span className="font-semibold">المجموع:</span>
+                    <div className="mb-1 flex w-full items-center justify-between text-sm">
+                      <span className="text-muted-foreground">المجموع الفرعي:</span>
+                      <span className="font-semibold">{formatIQD(subtotal)}</span>
+                    </div>
+                    <div className="mb-3 flex w-full items-center justify-between text-sm">
+                      <span className="text-muted-foreground">🚚 رسوم التوصيل:</span>
+                      <span className="font-semibold">{formatIQD(deliveryFee)}</span>
+                    </div>
+                    <div className="mb-3 flex w-full items-center justify-between text-lg border-t pt-2">
+                      <span className="font-semibold">المجموع الكلي:</span>
                       <span className="font-bold text-primary">{formatIQD(totalPrice)}</span>
                     </div>
                     <Button
@@ -341,6 +362,20 @@ const Index = () => {
             <div className="space-y-1">
               <p className="text-muted-foreground">العنوان</p>
               <p className="font-medium text-foreground">{customer.address.trim()}</p>
+            </div>
+            <div className="border-t pt-2 space-y-1">
+              <p className="text-muted-foreground">المنتجات ({totalQty})</p>
+              {cart.map((it) => (
+                <div key={it.id} className="flex justify-between text-xs">
+                  <span>{it.name} × {it.qty}</span>
+                  <span>{formatIQD(it.price_iqd * it.qty)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="border-t pt-2 space-y-1">
+              <div className="flex justify-between"><span className="text-muted-foreground">المجموع الفرعي</span><span>{formatIQD(subtotal)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">🚚 رسوم التوصيل</span><span>{formatIQD(deliveryFee)}</span></div>
+              <div className="flex justify-between font-bold text-primary text-base"><span>المجموع الكلي</span><span>{formatIQD(totalPrice)}</span></div>
             </div>
           </div>
 
@@ -393,7 +428,7 @@ const Index = () => {
       {/* Categories */}
       <section className="container mx-auto px-4 py-6">
         <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map((c) => (
+          {allCategories.map((c) => (
             <Button key={c} variant={activeCat === c ? "default" : "outline"} onClick={() => setActiveCat(c)} className="rounded-full">
               {c}
             </Button>
@@ -420,9 +455,21 @@ const Index = () => {
                   <span className="text-lg font-bold text-primary">{formatIQD(p.price_iqd)}</span>
                   <span className="text-xs text-muted-foreground">/ {p.unit}</span>
                 </div>
-                <Button onClick={() => addToCart(p)} className="w-full gap-1" size="sm">
-                  <Plus className="h-4 w-4" /> أضف للسلة
-                </Button>
+                {getCartQty(p.id) === 0 ? (
+                  <Button onClick={() => addToCart(p)} className="w-full gap-1" size="sm">
+                    <Plus className="h-4 w-4" /> أضف للسلة
+                  </Button>
+                ) : (
+                  <div className="flex items-center justify-between gap-1 rounded-md border bg-accent/30 p-1">
+                    <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => updateQty(p.id, -1)}>
+                      <Minus className="h-3 w-3" />
+                    </Button>
+                    <span className="font-bold text-base">{getCartQty(p.id)}</span>
+                    <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => updateQty(p.id, 1)}>
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
               </div>
             </Card>
           ))}
@@ -438,8 +485,10 @@ const Index = () => {
           </div>
           <div className="space-y-2">
             <h3 className="font-semibold">تواصل معنا</h3>
-            <p className="flex items-center gap-2 text-sm opacity-90"><Phone className="h-4 w-4" /> 07XX XXX XXXX</p>
-            <p className="flex items-center gap-2 text-sm opacity-90"><MapPin className="h-4 w-4" /> كركوك - العراق</p>
+            <a href={`tel:${STORE_PHONE_TEL}`} className="flex items-center gap-2 text-sm opacity-90 hover:opacity-100" dir="ltr">
+              <Phone className="h-4 w-4" /> {STORE_PHONE}
+            </a>
+            <p className="flex items-center gap-2 text-sm opacity-90"><MapPin className="h-4 w-4" /> {STORE_LOCATION}</p>
           </div>
           <div className="space-y-2">
             <h3 className="font-semibold">تابعنا</h3>

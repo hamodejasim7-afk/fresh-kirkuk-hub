@@ -20,8 +20,8 @@ import {
 import { Plus, Pencil, Trash2, Upload, Package } from "lucide-react";
 import { toast } from "sonner";
 import { formatIQD } from "@/lib/format";
+import { useCategories } from "@/hooks/useCategories";
 
-const CATEGORIES = ["خضار وفواكه", "لحوم", "أسماك", "دجاج"];
 const UNITS = ["كغم", "حبة", "ربطة", "علبة", "لتر"];
 
 interface FormState {
@@ -38,7 +38,7 @@ interface FormState {
 
 const emptyForm: FormState = {
   name: "",
-  category: CATEGORIES[0],
+  category: "",
   price_iqd: "",
   unit: "كغم",
   emoji: "🥬",
@@ -50,6 +50,8 @@ const emptyForm: FormState = {
 
 export const ProductsPanel = () => {
   const { products, loading, reload } = useProducts();
+  const { categories } = useCategories({ onlyActive: true });
+  const categoryNames = categories.map((c) => c.name);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<DBProduct | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -159,7 +161,7 @@ export const ProductsPanel = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="الكل">كل الفئات</SelectItem>
-              {CATEGORIES.map((c) => (
+              {categoryNames.map((c) => (
                 <SelectItem key={c} value={c}>{c}</SelectItem>
               ))}
             </SelectContent>
@@ -248,7 +250,7 @@ export const ProductsPanel = () => {
                 <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    {categoryNames.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
