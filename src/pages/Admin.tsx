@@ -916,6 +916,7 @@ const PurgeArchiveButton = ({ count, onConfirm }: { count: number; onConfirm: ()
   );
 };
 
+const StatCard = ({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub: string }) => (
   <Card className="p-4">
     <div className="flex items-start justify-between">
       <div>
