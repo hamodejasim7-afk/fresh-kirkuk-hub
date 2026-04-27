@@ -438,9 +438,21 @@ const Index = () => {
                   <span className="text-lg font-bold text-primary">{formatIQD(p.price_iqd)}</span>
                   <span className="text-xs text-muted-foreground">/ {p.unit}</span>
                 </div>
-                <Button onClick={() => addToCart(p)} className="w-full gap-1" size="sm">
-                  <Plus className="h-4 w-4" /> أضف للسلة
-                </Button>
+                {getCartQty(p.id) === 0 ? (
+                  <Button onClick={() => addToCart(p)} className="w-full gap-1" size="sm">
+                    <Plus className="h-4 w-4" /> أضف للسلة
+                  </Button>
+                ) : (
+                  <div className="flex items-center justify-between gap-1 rounded-md border bg-accent/30 p-1">
+                    <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => updateQty(p.id, -1)}>
+                      <Minus className="h-3 w-3" />
+                    </Button>
+                    <span className="font-bold text-base">{getCartQty(p.id)}</span>
+                    <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => updateQty(p.id, 1)}>
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
               </div>
             </Card>
           ))}
