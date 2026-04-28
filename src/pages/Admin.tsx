@@ -1171,7 +1171,37 @@ const StaffPanel = ({
     reload();
   };
 
-  const generatePassword = () => {
+  // Swap a staff member's role between driver and accountant (admin or accountant can do this)
+  const swapRole = async (s: Staff, target: "driver" | "accountant") => {
+    if (s.roles.includes("admin")) {
+      toast.error("لا يمكن تعديل دور المدير من هنا");
+      return;
+    }
+    // Get current changeable role row (driver or accountant). If the user already has the target, no-op.
+    const current = s.roles.find((r) => r === "driver" || r === "accountant");
+    if (!current) {
+      toast.error("لا يوجد دور قابل للتعديل لهذا الموظف");
+      return;
+    }
+    if (current === target) {
+      toast.info("الموظف لديه هذا الدور بالفعل");
+      return;
+    }
+    setBusy(true);
+    // Update the row in user_roles where user_id matches and role = current
+    const { error } = await supabase
+      .from("user_roles")
+      .update({ role: target })
+      .eq("user_id", s.id)
+      .eq("role", current);
+    setBusy(false);
+    if (error) {
+      toast.error("فشل تعديل الدور: " + error.message);
+      return;
+    }
+    toast.success(`تم تغيير الدور إلى ${target === "accountant" ? "محاسب" : "سائق"}`);
+    reload();
+  };
     const chars = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     let p = "";
     for (let i = 0; i < 10; i++) p += chars[Math.floor(Math.random() * chars.length)];
