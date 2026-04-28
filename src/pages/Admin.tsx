@@ -297,7 +297,7 @@ const Admin = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Detect newly arrived orders → beep + auto-open WhatsApp
+  // Detect newly arrived orders → beep + browser notification + toast (smooth, no full reload)
   useEffect(() => {
     if (orders.length === 0) return;
     const currentIds = new Set(orders.map((o) => o.id));
@@ -311,14 +311,39 @@ const Admin = () => {
     const newOnes = orders.filter((o) => !knownIdsRef.current.has(o.id));
     if (newOnes.length > 0) {
       playBeep();
-      // Visual flash: show pulsing badge for 8 seconds
+      // Subtle pulsing badge in header for 8 seconds (no page-wide flash)
       setHasNewFlash(true);
       setTimeout(() => setHasNewFlash(false), 8000);
-      toast.success(`🔔 وصل ${newOnes.length} طلب جديد!`, { duration: 6000 });
-      // Update document title to alert when tab is in background
-      const originalTitle = document.title;
-      document.title = `🔔 طلب جديد! — ${originalTitle}`;
-      setTimeout(() => { document.title = originalTitle; }, 8000);
+
+      // In-app toast with click-to-jump
+      newOnes.forEach((o) => {
+        const its = items[o.id] ?? [];
+        const summary = its.length > 0
+          ? its.map((it) => `${it.product_name}×${it.quantity}`).join(" • ")
+          : "طلب جديد";
+        toast.success(`🔔 ${o.customer_name} — ${fmt(o.total_iqd)}`, {
+          description: summary,
+          duration: 9000,
+          action: {
+            label: "فتح",
+            onClick: () => {
+              const el = document.getElementById(`order-row-${o.id}`);
+              el?.scrollIntoView({ behavior: "smooth", block: "center" });
+            },
+          },
+        });
+        // Browser-level notification (works in background tab / locked screen while browser open)
+        showOrderNotification({
+          title: "فريش — طلب جديد وصل",
+          body: `${o.customer_name} • ${fmt(o.total_iqd)}\n${summary}`,
+          tag: `order-${o.id}`,
+          onClick: () => {
+            const el = document.getElementById(`order-row-${o.id}`);
+            el?.scrollIntoView({ behavior: "smooth", block: "center" });
+          },
+        });
+      });
+
       if (autoSend && storePhone.trim()) {
         // Wait briefly so order_items load too
         setTimeout(() => {
