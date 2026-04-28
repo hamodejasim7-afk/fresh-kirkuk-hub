@@ -732,7 +732,7 @@ const Admin = () => {
                       <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">لا توجد طلبات نشطة</TableCell></TableRow>
                     ) : (
                       orders.map((o) => (
-                        <TableRow key={o.id}>
+                        <TableRow key={o.id} id={`order-row-${o.id}`}>
                           <TableCell className="text-xs whitespace-nowrap">
                             {new Date(o.created_at).toLocaleString("ar-IQ", { dateStyle: "short", timeStyle: "short" })}
                           </TableCell>
