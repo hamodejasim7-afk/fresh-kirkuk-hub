@@ -61,28 +61,30 @@ const Driver = () => {
   const playBeep = () => {
     if (!soundOn) return;
     try {
+      // Driver-specific alert: distinct urgent two-tone "siren" pattern (different from admin's chime)
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const notes = [
-        { freq: 1046, start: 0.0, dur: 0.18 },
-        { freq: 1318, start: 0.18, dur: 0.18 },
-        { freq: 1568, start: 0.36, dur: 0.34 },
+      const pattern = [
+        { freq: 880,  start: 0.00, dur: 0.22 }, // A5
+        { freq: 587,  start: 0.22, dur: 0.22 }, // D5 (down)
+        { freq: 880,  start: 0.46, dur: 0.22 },
+        { freq: 587,  start: 0.68, dur: 0.30 },
       ];
-      notes.forEach(({ freq, start, dur }) => {
+      pattern.forEach(({ freq, start, dur }) => {
         const o = ctx.createOscillator();
         const g = ctx.createGain();
-        o.type = "triangle";
+        o.type = "square"; // sharper, more "alert" than triangle
         o.frequency.value = freq;
         o.connect(g); g.connect(ctx.destination);
         const t0 = ctx.currentTime + start;
         g.gain.setValueAtTime(0.0001, t0);
-        g.gain.exponentialRampToValueAtTime(0.35, t0 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.32, t0 + 0.02);
         g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
         o.start(t0); o.stop(t0 + dur + 0.05);
       });
     } catch {}
   };
 
-  const load = async () => {
+  const load = async (opts?: { silent?: boolean }) => {
     const { data: ordersData, error } = await supabase
       .from("orders")
       .select("*")
@@ -92,20 +94,50 @@ const Driver = () => {
       .order("created_at", { ascending: false });
 
     if (error) {
-      toast.error("فشل التحميل");
+      if (!opts?.silent) toast.error("فشل التحميل");
     } else {
-      setOrders(ordersData ?? []);
-      const ids = (ordersData ?? []).map((o) => o.id);
+      const next = ordersData ?? [];
+      // Diff orders — only update state if something actually changed (no flash)
+      setOrders((prev) => {
+        if (prev.length === next.length) {
+          let same = true;
+          for (let i = 0; i < prev.length; i++) {
+            const a = prev[i], b = next[i];
+            if (a.id !== b.id || a.status !== b.status || a.driver_id !== b.driver_id) {
+              same = false; break;
+            }
+          }
+          if (same) return prev;
+        }
+        return next;
+      });
+
+      const ids = next.map((o) => o.id);
       if (ids.length > 0) {
         const { data: itemsData } = await supabase.from("order_items").select("*").in("order_id", ids);
         const grouped: Record<string, OrderItem[]> = {};
         (itemsData ?? []).forEach((it) => { (grouped[it.order_id] ||= []).push(it); });
-        setItems(grouped);
+        setItems((prev) => {
+          const pk = Object.keys(prev), nk = Object.keys(grouped);
+          if (pk.length === nk.length) {
+            let same = true;
+            for (const k of nk) {
+              const a = prev[k], b = grouped[k];
+              if (!a || a.length !== b.length) { same = false; break; }
+              for (let i = 0; i < a.length; i++) {
+                if (a[i].id !== b[i].id || a[i].quantity !== b[i].quantity) { same = false; break; }
+              }
+              if (!same) break;
+            }
+            if (same) return prev;
+          }
+          return grouped;
+        });
       } else {
-        setItems({});
+        setItems((prev) => (Object.keys(prev).length === 0 ? prev : {}));
       }
     }
-    setLoading(false);
+    if (!opts?.silent) setLoading(false);
   };
 
   useEffect(() => {
