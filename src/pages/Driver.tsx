@@ -21,6 +21,7 @@ interface Order {
   total_iqd: number;
   delivery_fee_iqd: number;
   status: string;
+  driver_id: string | null;
   created_at: string;
 }
 
