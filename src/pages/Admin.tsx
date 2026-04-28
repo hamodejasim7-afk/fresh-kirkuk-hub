@@ -219,9 +219,28 @@ const Admin = () => {
         (itemsData ?? []).forEach((it) => {
           (grouped[it.order_id] ||= []).push(it);
         });
-        setItems(grouped);
+        // Diff: only update items state if changed (avoid re-render flash)
+        setItems((prev) => {
+          const prevKeys = Object.keys(prev);
+          const nextKeys = Object.keys(grouped);
+          if (prevKeys.length === nextKeys.length) {
+            let same = true;
+            for (const k of nextKeys) {
+              const a = prev[k], b = grouped[k];
+              if (!a || a.length !== b.length) { same = false; break; }
+              for (let i = 0; i < a.length; i++) {
+                if (a[i].id !== b[i].id || a[i].quantity !== b[i].quantity || a[i].price_iqd !== b[i].price_iqd) {
+                  same = false; break;
+                }
+              }
+              if (!same) break;
+            }
+            if (same) return prev;
+          }
+          return grouped;
+        });
       } else {
-        setItems({});
+        setItems((prev) => (Object.keys(prev).length === 0 ? prev : {}));
       }
     }
 
