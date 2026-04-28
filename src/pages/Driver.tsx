@@ -268,7 +268,7 @@ const Driver = () => {
               const isOnWay = o.status === "on_the_way";
               const isDelivered = o.status === "delivered";
               return (
-                <Card key={o.id} className="p-4 space-y-3">
+                <Card key={o.id} id={`drv-order-${o.id}`} className="p-4 space-y-3">
                   <div className="flex items-start justify-between">
                     <div>
                       <h3 className="font-bold text-lg">{o.customer_name}</h3>
