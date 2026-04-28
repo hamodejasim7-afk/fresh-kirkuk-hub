@@ -38,6 +38,8 @@ import { CategoriesPanel } from "@/components/CategoriesPanel";
 import { PricingPanel } from "@/components/PricingPanel";
 import { STORE_PHONE, STORE_PHONE_TEL, STORE_LOCATION } from "@/lib/constants";
 import { exportOrdersToExcel } from "@/lib/exportExcel";
+import { ensureNotificationPermission, showOrderNotification } from "@/lib/notifications";
+import { formatIQD as fmt } from "@/lib/format";
 
 interface Order {
   id: string;
