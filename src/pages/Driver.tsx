@@ -144,6 +144,10 @@ const Driver = () => {
   useEffect(() => {
     if (!user) return;
     load();
+    // Request browser notification permission once (so driver gets alerts in background tab)
+    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission().catch(() => {});
+    }
     const channel = supabase
       .channel("driver-orders")
       .on(
