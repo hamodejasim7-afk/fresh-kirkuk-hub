@@ -38,6 +38,8 @@ import { CategoriesPanel } from "@/components/CategoriesPanel";
 import { PricingPanel } from "@/components/PricingPanel";
 import { STORE_PHONE, STORE_PHONE_TEL, STORE_LOCATION } from "@/lib/constants";
 import { exportOrdersToExcel } from "@/lib/exportExcel";
+import { ensureNotificationPermission, showOrderNotification } from "@/lib/notifications";
+import { formatIQD as fmt } from "@/lib/format";
 
 interface Order {
   id: string;
@@ -177,8 +179,8 @@ const Admin = () => {
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (opts?: { silent?: boolean }) => {
+    if (!opts?.silent) setLoading(true);
 
     // Active orders only (not archived)
     const { data: ordersData, error: ordersErr } = await supabase
@@ -188,10 +190,24 @@ const Admin = () => {
       .order("created_at", { ascending: false });
 
     if (ordersErr) {
-      toast.error("فشل تحميل الطلبات");
+      if (!opts?.silent) toast.error("فشل تحميل الطلبات");
       console.error(ordersErr);
     } else {
-      setOrders(ordersData ?? []);
+      // Smooth diff: only update state if something actually changed (avoids re-render flash)
+      setOrders((prev) => {
+        const next = ordersData ?? [];
+        if (prev.length === next.length) {
+          let same = true;
+          for (let i = 0; i < prev.length; i++) {
+            const a = prev[i], b = next[i];
+            if (a.id !== b.id || a.status !== b.status || a.driver_id !== b.driver_id || a.updated_at !== b.updated_at) {
+              same = false; break;
+            }
+          }
+          if (same) return prev;
+        }
+        return next;
+      });
 
       const ids = (ordersData ?? []).map((o) => o.id);
       if (ids.length > 0) {
@@ -209,7 +225,7 @@ const Admin = () => {
       }
     }
 
-    // All staff (admins + drivers)
+    // All staff (admins + drivers + accountants)
     const { data: rolesData } = await supabase
       .from("user_roles")
       .select("user_id, role");
@@ -244,29 +260,32 @@ const Admin = () => {
       setDrivers([]);
     }
 
-    setLoading(false);
+    if (!opts?.silent) setLoading(false);
   };
 
   useEffect(() => {
     loadData();
 
-    // Realtime updates for orders, items, roles, profiles
+    // Ask the user for notification permission once (admin/accountant)
+    ensureNotificationPermission().catch(() => {});
+
+    // Realtime updates for orders, items, roles, profiles — silent (no loading flash)
     const channel = supabase
       .channel("admin-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => loadData())
-      .on("postgres_changes", { event: "*", schema: "public", table: "order_items" }, () => loadData())
-      .on("postgres_changes", { event: "*", schema: "public", table: "user_roles" }, () => loadData())
-      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => loadData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => loadData({ silent: true }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "order_items" }, () => loadData({ silent: true }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_roles" }, () => loadData({ silent: true }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => loadData({ silent: true }))
       .subscribe();
 
-    // Fallback polling every 5s (skipped when tab hidden) in case realtime drops
+    // Fallback silent polling every 5s (skipped when tab hidden) in case realtime drops
     const interval = setInterval(() => {
-      if (document.visibilityState === "visible") loadData();
+      if (document.visibilityState === "visible") loadData({ silent: true });
     }, 5000);
 
     // Reload immediately when tab becomes visible again
     const onVisible = () => {
-      if (document.visibilityState === "visible") loadData();
+      if (document.visibilityState === "visible") loadData({ silent: true });
     };
     document.addEventListener("visibilitychange", onVisible);
 
@@ -278,7 +297,7 @@ const Admin = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Detect newly arrived orders → beep + auto-open WhatsApp
+  // Detect newly arrived orders → beep + browser notification + toast (smooth, no full reload)
   useEffect(() => {
     if (orders.length === 0) return;
     const currentIds = new Set(orders.map((o) => o.id));
@@ -292,14 +311,39 @@ const Admin = () => {
     const newOnes = orders.filter((o) => !knownIdsRef.current.has(o.id));
     if (newOnes.length > 0) {
       playBeep();
-      // Visual flash: show pulsing badge for 8 seconds
+      // Subtle pulsing badge in header for 8 seconds (no page-wide flash)
       setHasNewFlash(true);
       setTimeout(() => setHasNewFlash(false), 8000);
-      toast.success(`🔔 وصل ${newOnes.length} طلب جديد!`, { duration: 6000 });
-      // Update document title to alert when tab is in background
-      const originalTitle = document.title;
-      document.title = `🔔 طلب جديد! — ${originalTitle}`;
-      setTimeout(() => { document.title = originalTitle; }, 8000);
+
+      // In-app toast with click-to-jump
+      newOnes.forEach((o) => {
+        const its = items[o.id] ?? [];
+        const summary = its.length > 0
+          ? its.map((it) => `${it.product_name}×${it.quantity}`).join(" • ")
+          : "طلب جديد";
+        toast.success(`🔔 ${o.customer_name} — ${fmt(o.total_iqd)}`, {
+          description: summary,
+          duration: 9000,
+          action: {
+            label: "فتح",
+            onClick: () => {
+              const el = document.getElementById(`order-row-${o.id}`);
+              el?.scrollIntoView({ behavior: "smooth", block: "center" });
+            },
+          },
+        });
+        // Browser-level notification (works in background tab / locked screen while browser open)
+        showOrderNotification({
+          title: "فريش — طلب جديد وصل",
+          body: `${o.customer_name} • ${fmt(o.total_iqd)}\n${summary}`,
+          tag: `order-${o.id}`,
+          onClick: () => {
+            const el = document.getElementById(`order-row-${o.id}`);
+            el?.scrollIntoView({ behavior: "smooth", block: "center" });
+          },
+        });
+      });
+
       if (autoSend && storePhone.trim()) {
         // Wait briefly so order_items load too
         setTimeout(() => {
@@ -538,53 +582,79 @@ const Admin = () => {
           <StatCard icon={<Package />} label="إجمالي نشط" value={formatIQD(stats.all)} sub={`${stats.allCount} طلب`} />
         </div>
 
-        {/* Store open/closed control */}
-        <StoreStatusCard />
+        {/* Store open/closed control — admin only */}
+        {isAdmin && <StoreStatusCard />}
 
-        {/* WhatsApp / notifications settings */}
-        <Card className="p-4 print:hidden">
-          <h3 className="font-semibold mb-3 flex items-center gap-2">
-            <Settings className="h-4 w-4" />إعدادات الإشعارات والواتساب
-          </h3>
-          <div className="grid gap-3 md:grid-cols-3 items-end">
-            <div className="space-y-1">
-              <Label htmlFor="store-phone">رقم واتساب المتجر</Label>
-              <Input
-                id="store-phone"
-                value={storePhone}
-                onChange={(e) => setStorePhone(e.target.value)}
-                placeholder="07XX XXX XXXX"
-                dir="ltr"
-              />
-              <p className="text-xs text-muted-foreground">عراقي: يكفي 07XXXXXXXXX</p>
+        {/* WhatsApp / notifications settings — admin only (system settings hidden from accountant) */}
+        {isAdmin && (
+          <Card className="p-4 print:hidden">
+            <h3 className="font-semibold mb-3 flex items-center gap-2">
+              <Settings className="h-4 w-4" />إعدادات الإشعارات والواتساب
+            </h3>
+            <div className="grid gap-3 md:grid-cols-3 items-end">
+              <div className="space-y-1">
+                <Label htmlFor="store-phone">رقم واتساب المتجر</Label>
+                <Input
+                  id="store-phone"
+                  value={storePhone}
+                  onChange={(e) => setStorePhone(e.target.value)}
+                  placeholder="07XX XXX XXXX"
+                  dir="ltr"
+                />
+                <p className="text-xs text-muted-foreground">عراقي: يكفي 07XXXXXXXXX</p>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={autoSend}
+                  onChange={(e) => setAutoSend(e.target.checked)}
+                  className="h-4 w-4 accent-primary"
+                />
+                <span className="text-sm">فتح واتساب تلقائياً عند كل طلب جديد</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={soundOn}
+                  onChange={(e) => setSoundOn(e.target.checked)}
+                  className="h-4 w-4 accent-primary"
+                />
+                <span className="text-sm flex items-center gap-1">
+                  {soundOn ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+                  صوت تنبيه عند الطلب الجديد
+                </span>
+              </label>
             </div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={autoSend}
-                onChange={(e) => setAutoSend(e.target.checked)}
-                className="h-4 w-4 accent-primary"
-              />
-              <span className="text-sm">فتح واتساب تلقائياً عند كل طلب جديد</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={soundOn}
-                onChange={(e) => setSoundOn(e.target.checked)}
-                className="h-4 w-4 accent-primary"
-              />
-              <span className="text-sm flex items-center gap-1">
-                {soundOn ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
-                صوت تنبيه عند الطلب الجديد
-              </span>
-            </label>
-          </div>
-          <p className="text-xs text-muted-foreground mt-3">
-            💡 الإرسال يفتح واتساب ويب/التطبيق برسالة جاهزة فيها كل تفاصيل الطلب — مجاني تماماً.
-            للفتح التلقائي اسمح للمتصفح بفتح النوافذ المنبثقة لهذا الموقع.
-          </p>
-        </Card>
+            <NotificationPermissionRow />
+            <p className="text-xs text-muted-foreground mt-3">
+              💡 الإرسال يفتح واتساب ويب/التطبيق برسالة جاهزة فيها كل تفاصيل الطلب — مجاني تماماً.
+              للفتح التلقائي اسمح للمتصفح بفتح النوافذ المنبثقة لهذا الموقع.
+            </p>
+          </Card>
+        )}
+
+        {/* Accountant: minimal notifications row only (system settings hidden) */}
+        {!isAdmin && (
+          <Card className="p-4 print:hidden">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Bell className="h-4 w-4" />التنبيهات
+              </h3>
+              <div className="flex flex-wrap items-center gap-4">
+                <label className="flex items-center gap-2 cursor-pointer text-sm">
+                  <input
+                    type="checkbox"
+                    checked={soundOn}
+                    onChange={(e) => setSoundOn(e.target.checked)}
+                    className="h-4 w-4 accent-primary"
+                  />
+                  صوت تنبيه عند الطلب الجديد
+                </label>
+                <NotificationPermissionRow inline />
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Action bar */}
         <div className="flex flex-wrap items-center gap-2 print:hidden">
@@ -662,7 +732,7 @@ const Admin = () => {
                       <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">لا توجد طلبات نشطة</TableCell></TableRow>
                     ) : (
                       orders.map((o) => (
-                        <TableRow key={o.id}>
+                        <TableRow key={o.id} id={`order-row-${o.id}`}>
                           <TableCell className="text-xs whitespace-nowrap">
                             {new Date(o.created_at).toLocaleString("ar-IQ", { dateStyle: "short", timeStyle: "short" })}
                           </TableCell>
@@ -1101,6 +1171,38 @@ const StaffPanel = ({
     reload();
   };
 
+  // Swap a staff member's role between driver and accountant (admin or accountant can do this)
+  const swapRole = async (s: Staff, target: "driver" | "accountant") => {
+    if (s.roles.includes("admin")) {
+      toast.error("لا يمكن تعديل دور المدير من هنا");
+      return;
+    }
+    // Get current changeable role row (driver or accountant). If the user already has the target, no-op.
+    const current = s.roles.find((r) => r === "driver" || r === "accountant");
+    if (!current) {
+      toast.error("لا يوجد دور قابل للتعديل لهذا الموظف");
+      return;
+    }
+    if (current === target) {
+      toast.info("الموظف لديه هذا الدور بالفعل");
+      return;
+    }
+    setBusy(true);
+    // Update the row in user_roles where user_id matches and role = current
+    const { error } = await supabase
+      .from("user_roles")
+      .update({ role: target })
+      .eq("user_id", s.id)
+      .eq("role", current);
+    setBusy(false);
+    if (error) {
+      toast.error("فشل تعديل الدور: " + error.message);
+      return;
+    }
+    toast.success(`تم تغيير الدور إلى ${target === "accountant" ? "محاسب" : "سائق"}`);
+    reload();
+  };
+
   const generatePassword = () => {
     const chars = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     let p = "";
@@ -1232,39 +1334,81 @@ const StaffPanel = ({
                         if (s.id === currentUserId) {
                           return <span className="text-xs text-muted-foreground">(أنت)</span>;
                         }
-                        // Accountants can only delete drivers
+                        const isAdminRow = s.roles.includes("admin");
+                        // Role-edit eligibility: target is a single driver/accountant (not admin), and user is admin or accountant
+                        const canEditRole =
+                          !isAdminRow &&
+                          s.roles.some((r) => r === "driver" || r === "accountant");
+                        // Delete: admins delete anyone (not self); accountants delete only pure drivers
                         const isPureDriver =
-                          s.roles.length > 0 &&
-                          s.roles.every((r) => r === "driver");
-                        if (!isAdmin && !isPureDriver) {
+                          s.roles.length > 0 && s.roles.every((r) => r === "driver");
+                        const canDelete = isAdmin || (!isAdmin && isPureDriver);
+                        if (!canEditRole && !canDelete) {
                           return <span className="text-xs text-muted-foreground">—</span>;
                         }
+                        const currentSwap = s.roles.find((r) => r === "driver" || r === "accountant");
+                        const target: "driver" | "accountant" = currentSwap === "driver" ? "accountant" : "driver";
                         return (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button size="sm" variant="destructive" disabled={busy}>
-                                حذف
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent dir="rtl">
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>تأكيد حذف الموظف</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  سيتم حذف حساب {s.full_name || "هذا الموظف"} نهائياً ولن يستطيع الدخول للنظام.
-                                  إذا كان سائقاً، ستُلغى ربط طلباته الحالية.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => removeStaff(s.id)}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  نعم، احذف
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                          <div className="flex gap-1 flex-wrap">
+                            {canEditRole && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button size="sm" variant="outline" disabled={busy}>
+                                    تعديل الدور
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent dir="rtl">
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>تغيير دور الموظف</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      سيتم تغيير دور <strong>{s.full_name || "هذا الموظف"}</strong> من
+                                      <Badge variant="secondary" className="mx-1">
+                                        {currentSwap === "accountant" ? "محاسب" : "سائق"}
+                                      </Badge>
+                                      إلى
+                                      <Badge variant="secondary" className="mx-1">
+                                        {target === "accountant" ? "محاسب" : "سائق"}
+                                      </Badge>
+                                      .<br />سيتم تحديث ما يراه فوراً عند تحديث صفحته.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => swapRole(s, target)}>
+                                      نعم، غيّر الدور
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                            {canDelete && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button size="sm" variant="destructive" disabled={busy}>
+                                    حذف
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent dir="rtl">
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>تأكيد حذف الموظف</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      سيتم حذف حساب {s.full_name || "هذا الموظف"} نهائياً ولن يستطيع الدخول للنظام.
+                                      إذا كان سائقاً، ستُلغى ربط طلباته الحالية.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => removeStaff(s.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      نعم، احذف
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </div>
                         );
                       })()}
                     </TableCell>
@@ -1399,6 +1543,44 @@ const StoreStatusCard = () => {
         )}
       </div>
     </Card>
+  );
+};
+
+// Small row to show/request browser notification permission
+const NotificationPermissionRow = ({ inline = false }: { inline?: boolean }) => {
+  const [perm, setPerm] = useState<NotificationPermission | "unsupported">(
+    typeof window === "undefined" || !("Notification" in window) ? "unsupported" : Notification.permission,
+  );
+
+  const request = async () => {
+    const p = await ensureNotificationPermission();
+    setPerm(p);
+    if (p === "granted") {
+      toast.success("تم تفعيل إشعارات المتصفح ✅");
+    } else if (p === "denied") {
+      toast.error("تم رفض الإشعارات. فعّلها يدوياً من إعدادات المتصفح.");
+    }
+  };
+
+  if (perm === "unsupported") {
+    return <p className={`text-xs text-muted-foreground ${inline ? "" : "mt-2"}`}>متصفحك لا يدعم إشعارات النظام.</p>;
+  }
+
+  if (perm === "granted") {
+    return (
+      <p className={`text-xs text-primary flex items-center gap-1 ${inline ? "" : "mt-2"}`}>
+        <Bell className="h-3.5 w-3.5" />إشعارات المتصفح مفعّلة — ستصلك حتى لو كان التبويب في الخلفية.
+      </p>
+    );
+  }
+
+  return (
+    <div className={`flex items-center gap-2 ${inline ? "" : "mt-3"}`}>
+      <Button size="sm" variant="outline" onClick={request} className="gap-1">
+        <Bell className="h-3.5 w-3.5" />تفعيل إشعارات المتصفح
+      </Button>
+      <span className="text-xs text-muted-foreground">لاستقبال تنبيهات الطلبات حتى لو كان التبويب في الخلفية.</span>
+    </div>
   );
 };
 
