@@ -179,8 +179,8 @@ const Admin = () => {
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (opts?: { silent?: boolean }) => {
+    if (!opts?.silent) setLoading(true);
 
     // Active orders only (not archived)
     const { data: ordersData, error: ordersErr } = await supabase
@@ -190,10 +190,24 @@ const Admin = () => {
       .order("created_at", { ascending: false });
 
     if (ordersErr) {
-      toast.error("فشل تحميل الطلبات");
+      if (!opts?.silent) toast.error("فشل تحميل الطلبات");
       console.error(ordersErr);
     } else {
-      setOrders(ordersData ?? []);
+      // Smooth diff: only update state if something actually changed (avoids re-render flash)
+      setOrders((prev) => {
+        const next = ordersData ?? [];
+        if (prev.length === next.length) {
+          let same = true;
+          for (let i = 0; i < prev.length; i++) {
+            const a = prev[i], b = next[i];
+            if (a.id !== b.id || a.status !== b.status || a.driver_id !== b.driver_id || a.updated_at !== b.updated_at) {
+              same = false; break;
+            }
+          }
+          if (same) return prev;
+        }
+        return next;
+      });
 
       const ids = (ordersData ?? []).map((o) => o.id);
       if (ids.length > 0) {
@@ -211,7 +225,7 @@ const Admin = () => {
       }
     }
 
-    // All staff (admins + drivers)
+    // All staff (admins + drivers + accountants)
     const { data: rolesData } = await supabase
       .from("user_roles")
       .select("user_id, role");
@@ -246,7 +260,7 @@ const Admin = () => {
       setDrivers([]);
     }
 
-    setLoading(false);
+    if (!opts?.silent) setLoading(false);
   };
 
   useEffect(() => {
