@@ -146,17 +146,29 @@ const Driver = () => {
     load();
     const channel = supabase
       .channel("driver-orders")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `driver_id=eq.${user.id}` }, () => load())
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders", filter: `driver_id=eq.${user.id}` },
+        () => load({ silent: true }),
+      )
       .subscribe();
     // Silent background polling — only when tab visible
     const t = setInterval(() => {
-      if (document.visibilityState === "visible") load();
+      if (document.visibilityState === "visible") load({ silent: true });
     }, 5000);
-    return () => { supabase.removeChannel(channel); clearInterval(t); };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") load({ silent: true });
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Detect newly assigned orders → beep + small badge (no full reload feel)
+  // Detect newly assigned orders → distinct driver beep + bold visual notification
   useEffect(() => {
     if (orders.length === 0) {
       knownIdsRef.current = new Set();
@@ -172,8 +184,36 @@ const Driver = () => {
     if (newOnes.length > 0) {
       playBeep();
       setHasNewFlash(true);
-      setTimeout(() => setHasNewFlash(false), 8000);
-      toast.success(`🔔 تم تعيين ${newOnes.length} طلب جديد لك!`, { duration: 6000 });
+      setTimeout(() => setHasNewFlash(false), 10000);
+      newOnes.forEach((o) => {
+        toast(
+          `🚚 طلب جديد مُعيَّن لك — ${o.customer_name}`,
+          {
+            description: `📍 ${o.customer_address} • ${o.customer_phone}`,
+            duration: 12000,
+            className: "border-primary bg-primary/10 text-primary-foreground font-bold",
+            action: {
+              label: "اعرض",
+              onClick: () => {
+                const el = document.getElementById(`drv-order-${o.id}`);
+                el?.scrollIntoView({ behavior: "smooth", block: "center" });
+              },
+            },
+          },
+        );
+        // Browser-level notification when tab in background
+        if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+          try {
+            const n = new Notification("فريش — طلب جديد لك 🚚", {
+              body: `${o.customer_name} • ${o.customer_address}`,
+              tag: `drv-${o.id}`,
+              requireInteraction: false,
+            });
+            n.onclick = () => { window.focus(); n.close(); };
+            setTimeout(() => n.close(), 12000);
+          } catch {}
+        }
+      });
     }
     knownIdsRef.current = currentIds;
     // eslint-disable-next-line react-hooks/exhaustive-deps
