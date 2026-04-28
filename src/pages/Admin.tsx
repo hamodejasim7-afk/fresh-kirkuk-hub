@@ -1202,6 +1202,8 @@ const StaffPanel = ({
     toast.success(`تم تغيير الدور إلى ${target === "accountant" ? "محاسب" : "سائق"}`);
     reload();
   };
+
+  const generatePassword = () => {
     const chars = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     let p = "";
     for (let i = 0; i < 10; i++) p += chars[Math.floor(Math.random() * chars.length)];
