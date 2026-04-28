@@ -3,14 +3,13 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatIQD } from "@/lib/format";
 import { toast } from "sonner";
-import { LogOut, Phone, MapPin, ArrowRight, Truck, Bell, BellOff } from "lucide-react";
+import { LogOut, Phone, MapPin, ArrowRight, Truck, Bell, BellOff, PackageCheck, CheckCircle2 } from "lucide-react";
 import freshLogo from "@/assets/fresh-logo.png";
 
 interface Order {
@@ -20,6 +19,7 @@ interface Order {
   customer_address: string;
   notes: string | null;
   total_iqd: number;
+  delivery_fee_iqd: number;
   status: string;
   created_at: string;
 }
@@ -33,8 +33,8 @@ interface OrderItem {
   quantity: number;
 }
 
-const DRIVER_STATUSES: Record<string, string> = {
-  assigned: "معين",
+const STATUS_LABEL: Record<string, string> = {
+  assigned: "بانتظار الاستلام",
   on_the_way: "قيد التوصيل",
   delivered: "تم التسليم",
 };
@@ -46,10 +46,17 @@ const Driver = () => {
   const [loading, setLoading] = useState(true);
   const [soundOn, setSoundOn] = useState<boolean>(() => localStorage.getItem("fresh_driver_sound") !== "0");
   const [hasNewFlash, setHasNewFlash] = useState(false);
+  // Locally remembered "received amount" per order (read-only confirmation field)
+  const [receivedAmount, setReceivedAmount] = useState<Record<string, string>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("fresh_driver_received") || "{}");
+    } catch { return {}; }
+  });
   const knownIdsRef = useRef<Set<string>>(new Set());
   const initializedRef = useRef(false);
 
   useEffect(() => { localStorage.setItem("fresh_driver_sound", soundOn ? "1" : "0"); }, [soundOn]);
+  useEffect(() => { localStorage.setItem("fresh_driver_received", JSON.stringify(receivedAmount)); }, [receivedAmount]);
 
   const playBeep = () => {
     if (!soundOn) return;
@@ -65,20 +72,17 @@ const Driver = () => {
         const g = ctx.createGain();
         o.type = "triangle";
         o.frequency.value = freq;
-        o.connect(g);
-        g.connect(ctx.destination);
+        o.connect(g); g.connect(ctx.destination);
         const t0 = ctx.currentTime + start;
         g.gain.setValueAtTime(0.0001, t0);
         g.gain.exponentialRampToValueAtTime(0.35, t0 + 0.02);
         g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-        o.start(t0);
-        o.stop(t0 + dur + 0.05);
+        o.start(t0); o.stop(t0 + dur + 0.05);
       });
     } catch {}
   };
 
   const load = async () => {
-    setLoading(true);
     const { data: ordersData, error } = await supabase
       .from("orders")
       .select("*")
@@ -97,6 +101,8 @@ const Driver = () => {
         const grouped: Record<string, OrderItem[]> = {};
         (itemsData ?? []).forEach((it) => { (grouped[it.order_id] ||= []).push(it); });
         setItems(grouped);
+      } else {
+        setItems({});
       }
     }
     setLoading(false);
@@ -109,11 +115,15 @@ const Driver = () => {
       .channel("driver-orders")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `driver_id=eq.${user.id}` }, () => load())
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    // Silent background polling — only when tab visible
+    const t = setInterval(() => {
+      if (document.visibilityState === "visible") load();
+    }, 5000);
+    return () => { supabase.removeChannel(channel); clearInterval(t); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Detect newly assigned orders → beep + visual flash
+  // Detect newly assigned orders → beep + small badge (no full reload feel)
   useEffect(() => {
     if (orders.length === 0) {
       knownIdsRef.current = new Set();
@@ -131,9 +141,6 @@ const Driver = () => {
       setHasNewFlash(true);
       setTimeout(() => setHasNewFlash(false), 8000);
       toast.success(`🔔 تم تعيين ${newOnes.length} طلب جديد لك!`, { duration: 6000 });
-      const original = document.title;
-      document.title = `🔔 طلب جديد! — ${original}`;
-      setTimeout(() => { document.title = original; }, 8000);
     }
     knownIdsRef.current = currentIds;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -142,7 +149,8 @@ const Driver = () => {
   const updateStatus = async (id: string, status: string) => {
     const { error } = await supabase.from("orders").update({ status }).eq("id", id);
     if (error) toast.error("فشل التحديث");
-    else toast.success("تم التحديث");
+    else if (status === "on_the_way") toast.success("تم استلام الطلب من المخزن ✅");
+    else if (status === "delivered") toast.success("تم تسليم الطلب للزبون ✅");
   };
 
   return (
@@ -164,12 +172,7 @@ const Driver = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSoundOn(!soundOn)}
-              title={soundOn ? "إيقاف الصوت" : "تفعيل الصوت"}
-            >
+            <Button variant="ghost" size="sm" onClick={() => setSoundOn(!soundOn)} title={soundOn ? "إيقاف الصوت" : "تفعيل الصوت"}>
               {soundOn ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
             </Button>
             <Button asChild variant="outline" size="sm"><Link to="/"><ArrowRight className="h-4 w-4 ml-1" />المتجر</Link></Button>
@@ -187,48 +190,94 @@ const Driver = () => {
           <Card className="p-12 text-center text-muted-foreground">لا توجد طلبات معينة لك حالياً</Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
-            {orders.map((o) => (
-              <Card key={o.id} className="p-4 space-y-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-bold text-lg">{o.customer_name}</h3>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(o.created_at).toLocaleString("ar-IQ", { dateStyle: "short", timeStyle: "short" })}
-                    </p>
-                  </div>
-                  <Badge>{DRIVER_STATUSES[o.status] ?? o.status}</Badge>
-                </div>
-
-                <div className="space-y-1 text-sm">
-                  <a href={`tel:${o.customer_phone}`} className="flex items-center gap-2 text-primary hover:underline" dir="ltr">
-                    <Phone className="h-4 w-4" />{o.customer_phone}
-                  </a>
-                  <p className="flex items-start gap-2"><MapPin className="h-4 w-4 mt-0.5 shrink-0" /><span>{o.customer_address}</span></p>
-                  {o.notes && <p className="text-muted-foreground border-r-2 border-primary pr-2">{o.notes}</p>}
-                </div>
-
-                <div className="border-t pt-2 space-y-1">
-                  {(items[o.id] ?? []).map((it) => (
-                    <div key={it.id} className="flex justify-between text-sm">
-                      <span>{it.product_name} × {it.quantity} {it.unit}</span>
-                      <span>{formatIQD(it.price_iqd * Number(it.quantity))}</span>
+            {orders.map((o) => {
+              const isAssigned = o.status === "assigned";
+              const isOnWay = o.status === "on_the_way";
+              const isDelivered = o.status === "delivered";
+              return (
+                <Card key={o.id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-bold text-lg">{o.customer_name}</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(o.created_at).toLocaleString("ar-IQ", { dateStyle: "short", timeStyle: "short" })}
+                      </p>
                     </div>
-                  ))}
-                </div>
+                    <Badge variant={isDelivered ? "outline" : "default"}>{STATUS_LABEL[o.status] ?? o.status}</Badge>
+                  </div>
 
-                <div className="flex items-center justify-between border-t pt-2">
-                  <span className="font-bold text-primary text-lg">{formatIQD(o.total_iqd)}</span>
-                  <Select value={o.status} onValueChange={(v) => updateStatus(o.id, v)}>
-                    <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(DRIVER_STATUSES).map(([k, v]) => (
-                        <SelectItem key={k} value={k}>{v}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </Card>
-            ))}
+                  <div className="space-y-1 text-sm">
+                    <a href={`tel:${o.customer_phone}`} className="flex items-center gap-2 text-primary hover:underline" dir="ltr">
+                      <Phone className="h-4 w-4" />{o.customer_phone}
+                    </a>
+                    <p className="flex items-start gap-2"><MapPin className="h-4 w-4 mt-0.5 shrink-0" /><span>{o.customer_address}</span></p>
+                    {o.notes && <p className="text-muted-foreground border-r-2 border-primary pr-2">{o.notes}</p>}
+                  </div>
+
+                  <div className="border-t pt-2 space-y-1">
+                    {(items[o.id] ?? []).map((it) => (
+                      <div key={it.id} className="flex justify-between text-sm">
+                        <span>{it.product_name} × {it.quantity} {it.unit}</span>
+                        <span>{formatIQD(it.price_iqd * Number(it.quantity))}</span>
+                      </div>
+                    ))}
+                    {o.delivery_fee_iqd > 0 && (
+                      <div className="flex justify-between text-xs text-muted-foreground pt-1">
+                        <span>🚚 رسوم التوصيل</span>
+                        <span>{formatIQD(o.delivery_fee_iqd)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between border-t pt-2">
+                    <span className="text-xs text-muted-foreground">المبلغ المطلوب</span>
+                    <span className="font-bold text-primary text-lg">{formatIQD(o.total_iqd)}</span>
+                  </div>
+
+                  {/* Driver action buttons */}
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <Button
+                      onClick={() => updateStatus(o.id, "on_the_way")}
+                      disabled={!isAssigned}
+                      variant={isAssigned ? "default" : "outline"}
+                      className="gap-1"
+                    >
+                      <PackageCheck className="h-4 w-4" />
+                      {isAssigned ? "استلام الطلب" : "تم الاستلام ✓"}
+                    </Button>
+                    <Button
+                      onClick={() => updateStatus(o.id, "delivered")}
+                      disabled={!isOnWay}
+                      variant={isOnWay ? "default" : "outline"}
+                      className="gap-1 bg-primary"
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                      {isDelivered ? "تم التوصيل ✓" : "تم التوصيل"}
+                    </Button>
+                  </div>
+
+                  {/* Received amount field — driver confirms only */}
+                  {(isOnWay || isDelivered) && (
+                    <div className="space-y-1 pt-1 border-t">
+                      <Label htmlFor={`amt-${o.id}`} className="text-xs">المبلغ المستلم من الزبون</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id={`amt-${o.id}`}
+                          inputMode="numeric"
+                          dir="ltr"
+                          value={receivedAmount[o.id] ?? String(o.total_iqd)}
+                          onChange={(e) =>
+                            setReceivedAmount((prev) => ({ ...prev, [o.id]: e.target.value.replace(/[^\d]/g, "") }))
+                          }
+                          placeholder={String(o.total_iqd)}
+                        />
+                        <span className="self-center text-xs text-muted-foreground">د.ع</span>
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
           </div>
         )}
       </main>
