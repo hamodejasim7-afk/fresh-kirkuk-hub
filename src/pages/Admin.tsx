@@ -1546,4 +1546,42 @@ const StoreStatusCard = () => {
   );
 };
 
+// Small row to show/request browser notification permission
+const NotificationPermissionRow = ({ inline = false }: { inline?: boolean }) => {
+  const [perm, setPerm] = useState<NotificationPermission | "unsupported">(
+    typeof window === "undefined" || !("Notification" in window) ? "unsupported" : Notification.permission,
+  );
+
+  const request = async () => {
+    const p = await ensureNotificationPermission();
+    setPerm(p);
+    if (p === "granted") {
+      toast.success("تم تفعيل إشعارات المتصفح ✅");
+    } else if (p === "denied") {
+      toast.error("تم رفض الإشعارات. فعّلها يدوياً من إعدادات المتصفح.");
+    }
+  };
+
+  if (perm === "unsupported") {
+    return <p className={`text-xs text-muted-foreground ${inline ? "" : "mt-2"}`}>متصفحك لا يدعم إشعارات النظام.</p>;
+  }
+
+  if (perm === "granted") {
+    return (
+      <p className={`text-xs text-primary flex items-center gap-1 ${inline ? "" : "mt-2"}`}>
+        <Bell className="h-3.5 w-3.5" />إشعارات المتصفح مفعّلة — ستصلك حتى لو كان التبويب في الخلفية.
+      </p>
+    );
+  }
+
+  return (
+    <div className={`flex items-center gap-2 ${inline ? "" : "mt-3"}`}>
+      <Button size="sm" variant="outline" onClick={request} className="gap-1">
+        <Bell className="h-3.5 w-3.5" />تفعيل إشعارات المتصفح
+      </Button>
+      <span className="text-xs text-muted-foreground">لاستقبال تنبيهات الطلبات حتى لو كان التبويب في الخلفية.</span>
+    </div>
+  );
+};
+
 export default Admin;
