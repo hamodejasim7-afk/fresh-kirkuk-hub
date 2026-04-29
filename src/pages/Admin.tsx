@@ -1191,6 +1191,7 @@ const StaffPanel = ({
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState<"driver" | "admin" | "accountant">("driver");
   const [busy, setBusy] = useState(false);
+  const [permsTarget, setPermsTarget] = useState<{ id: string; name: string } | null>(null);
 
   const createStaff = async (e: React.FormEvent) => {
     e.preventDefault();
