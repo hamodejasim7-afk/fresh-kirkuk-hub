@@ -709,16 +709,20 @@ const Admin = () => {
 
         {/* Action bar */}
         <div className="flex flex-wrap items-center gap-2 print:hidden">
-          <Button onClick={printReport} variant="outline" className="gap-2">
-            <Printer className="h-4 w-4" />طباعة التقرير
-          </Button>
+          {(isAdmin || perms.view_reports) && (
+            <Button onClick={printReport} variant="outline" className="gap-2">
+              <Printer className="h-4 w-4" />طباعة التقرير
+            </Button>
+          )}
 
-          <Button
-            onClick={() => exportOrdersToExcel(orders, items, `fresh-active-${new Date().toISOString().slice(0,10)}.xlsx`)}
-            variant="outline" className="gap-2" disabled={orders.length === 0}
-          >
-            <FileSpreadsheet className="h-4 w-4" />تصدير Excel
-          </Button>
+          {(isAdmin || perms.view_reports) && (
+            <Button
+              onClick={() => exportOrdersToExcel(orders, items, `fresh-active-${new Date().toISOString().slice(0,10)}.xlsx`)}
+              variant="outline" className="gap-2" disabled={orders.length === 0}
+            >
+              <FileSpreadsheet className="h-4 w-4" />تصدير Excel
+            </Button>
+          )}
 
           {isAdmin && (
             <AlertDialog>
