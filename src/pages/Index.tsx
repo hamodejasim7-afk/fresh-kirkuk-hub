@@ -1,5 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { ensureNotificationPermission, showOrderNotification } from "@/lib/notifications";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ type CartItem = DBProduct & { qty: number };
 
 const Index = () => {
   const { user, role, signOut } = useAuth();
+  const navigate = useNavigate();
   const { settings: storeSettings, loading } = useStoreSettings();
   const { products } = useProducts({ onlyAvailable: true });
   const { categories } = useCategories({ onlyActive: true });
@@ -57,6 +59,61 @@ const Index = () => {
     localStorage.setItem("fresh_cart", JSON.stringify(cart));
   }, [cart]);
 
+  // Background new-order watcher for admin/accountant browsing the storefront
+  const seenOrderIdsRef = useRef<Set<string>>(new Set());
+  const watcherInitRef = useRef(false);
+  useEffect(() => {
+    if (!user || (role !== "admin" && role !== "accountant")) return;
+
+    ensureNotificationPermission().catch(() => {});
+
+    const checkNew = async () => {
+      const { data } = await supabase
+        .from("orders")
+        .select("id, customer_name, total_iqd, created_at, status")
+        .is("archived_at", null)
+        .eq("status", "new")
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (!data) return;
+      const ids = new Set(data.map((o) => o.id));
+      if (!watcherInitRef.current) {
+        seenOrderIdsRef.current = ids;
+        watcherInitRef.current = true;
+        return;
+      }
+      const fresh = data.filter((o) => !seenOrderIdsRef.current.has(o.id));
+      fresh.forEach((o) => {
+        toast.success(`🔔 طلب جديد — ${o.customer_name}`, {
+          description: `المبلغ: ${formatIQD(o.total_iqd)}`,
+          duration: 9000,
+          action: { label: "افتح الإدارة", onClick: () => navigate("/admin") },
+        });
+        showOrderNotification({
+          title: "فريش — طلب جديد وصل",
+          body: `${o.customer_name} • ${formatIQD(o.total_iqd)}`,
+          tag: `bg-order-${o.id}`,
+          onClick: () => navigate("/admin"),
+        });
+      });
+      seenOrderIdsRef.current = ids;
+    };
+
+    checkNew();
+    const channel = supabase
+      .channel("storefront-order-watch")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders" }, () => checkNew())
+      .subscribe();
+    const t = setInterval(() => {
+      if (document.visibilityState === "visible") checkNew();
+    }, 8000);
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, role]);
+
   const filtered = useMemo(
     () => (activeCat === "الكل" ? products : products.filter((p) => p.category === activeCat)),
     [activeCat, products]
@@ -75,7 +132,12 @@ const Index = () => {
       if (found) return prev.map((i) => (i.id === p.id ? { ...i, qty: i.qty + 1 } : i));
       return [...prev, { ...p, qty: 1 }];
     });
-    toast.success(`تمت إضافة ${p.name}`);
+    // Small side toast (bottom-right) — won't cover the cart icon up top
+    toast.success(`تمت إضافة ${p.name} ✓`, {
+      position: "bottom-right",
+      duration: 2200,
+      className: "text-xs py-2",
+    });
   };
 
   const updateQty = (id: string, delta: number) => {
@@ -202,8 +264,8 @@ const Index = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            {user && role === "admin" && (
-              <Button asChild variant="outline" size="sm" className="gap-1">
+            {user && (role === "admin" || role === "accountant") && (
+              <Button asChild variant="default" size="sm" className="gap-1 shadow-md">
                 <Link to="/admin">
                   <LayoutDashboard className="h-4 w-4" />
                   <span className="hidden sm:inline">لوحة الإدارة</span>
@@ -212,7 +274,7 @@ const Index = () => {
               </Button>
             )}
             {user && role === "driver" && (
-              <Button asChild variant="outline" size="sm" className="gap-1">
+              <Button asChild variant="default" size="sm" className="gap-1 shadow-md">
                 <Link to="/driver">
                   <Truck className="h-4 w-4" />
                   <span className="hidden sm:inline">لوحة السائق</span>
@@ -342,48 +404,48 @@ const Index = () => {
       </header>
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent dir="rtl" className="sm:max-w-md">
+        <DialogContent dir="rtl" className="sm:max-w-lg">
           <DialogHeader className="text-right sm:text-right">
-            <DialogTitle>تأكيد بيانات الطلب</DialogTitle>
-            <DialogDescription>
-              راجع هذه المعلومات بسرعة قبل الإرسال النهائي.
+            <DialogTitle className="text-2xl">تأكيد بيانات الطلب</DialogTitle>
+            <DialogDescription className="text-base">
+              راجع هذه المعلومات بعناية قبل الإرسال النهائي.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-3 rounded-md border bg-accent/40 p-4 text-sm">
+          <div className="space-y-4 rounded-md border bg-accent/40 p-4 text-lg">
             <div className="space-y-1">
-              <p className="text-muted-foreground">الاسم</p>
-              <p className="font-medium text-foreground">{customer.name.trim()}</p>
+              <p className="text-sm text-muted-foreground">الاسم</p>
+              <p className="text-xl font-semibold text-foreground">{customer.name.trim()}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-muted-foreground">الهاتف</p>
-              <p className="font-medium text-foreground" dir="ltr">{customer.phone.trim()}</p>
+              <p className="text-sm text-muted-foreground">الهاتف</p>
+              <p className="text-xl font-semibold text-foreground" dir="ltr">{customer.phone.trim()}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-muted-foreground">العنوان</p>
-              <p className="font-medium text-foreground">{customer.address.trim()}</p>
+              <p className="text-sm text-muted-foreground">العنوان</p>
+              <p className="text-lg font-semibold text-foreground">{customer.address.trim()}</p>
             </div>
-            <div className="border-t pt-2 space-y-1">
-              <p className="text-muted-foreground">المنتجات ({totalQty})</p>
+            <div className="border-t pt-3 space-y-2">
+              <p className="text-sm text-muted-foreground">المنتجات ({totalQty})</p>
               {cart.map((it) => (
-                <div key={it.id} className="flex justify-between text-xs">
-                  <span>{it.name} × {it.qty}</span>
-                  <span>{formatIQD(it.price_iqd * it.qty)}</span>
+                <div key={it.id} className="flex justify-between text-lg font-medium">
+                  <span>{it.name} × <span className="font-bold">{it.qty}</span></span>
+                  <span className="font-bold">{formatIQD(it.price_iqd * it.qty)}</span>
                 </div>
               ))}
             </div>
-            <div className="border-t pt-2 space-y-1">
-              <div className="flex justify-between"><span className="text-muted-foreground">المجموع الفرعي</span><span>{formatIQD(subtotal)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">🚚 رسوم التوصيل</span><span>{formatIQD(deliveryFee)}</span></div>
-              <div className="flex justify-between font-bold text-primary text-base"><span>المجموع الكلي</span><span>{formatIQD(totalPrice)}</span></div>
+            <div className="border-t pt-3 space-y-2 text-lg">
+              <div className="flex justify-between"><span className="text-muted-foreground">المجموع الفرعي</span><span className="font-semibold">{formatIQD(subtotal)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">🚚 رسوم التوصيل</span><span className="font-semibold">{formatIQD(deliveryFee)}</span></div>
+              <div className="flex justify-between font-bold text-primary text-2xl border-t pt-2"><span>المجموع الكلي</span><span>{formatIQD(totalPrice)}</span></div>
             </div>
           </div>
 
           <DialogFooter className="gap-2 sm:flex-row-reverse sm:justify-start sm:space-x-0">
-            <Button type="button" onClick={submitOrder} disabled={submitting}>
+            <Button type="button" size="lg" className="text-base" onClick={submitOrder} disabled={submitting}>
               {submitting ? "جاري الإرسال..." : "تأكيد وإرسال"}
             </Button>
-            <Button type="button" variant="outline" onClick={() => setConfirmOpen(false)} disabled={submitting}>
+            <Button type="button" size="lg" className="text-base" variant="outline" onClick={() => setConfirmOpen(false)} disabled={submitting}>
               تعديل البيانات
             </Button>
           </DialogFooter>
@@ -505,6 +567,28 @@ const Index = () => {
           © {new Date().getFullYear()} فريش Fresh - جميع الحقوق محفوظة
         </div>
       </footer>
+
+      {/* Floating dashboard shortcut — always visible for staff */}
+      {user && (role === "admin" || role === "accountant") && (
+        <Link
+          to="/admin"
+          aria-label="فتح لوحة الإدارة"
+          className="fixed bottom-5 left-5 z-50 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-primary-foreground shadow-2xl hover:bg-primary/90 transition-all hover:scale-105"
+        >
+          <LayoutDashboard className="h-5 w-5" />
+          <span className="text-sm font-bold">لوحة الإدارة</span>
+        </Link>
+      )}
+      {user && role === "driver" && (
+        <Link
+          to="/driver"
+          aria-label="فتح لوحة السائق"
+          className="fixed bottom-5 left-5 z-50 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-primary-foreground shadow-2xl hover:bg-primary/90 transition-all hover:scale-105"
+        >
+          <Truck className="h-5 w-5" />
+          <span className="text-sm font-bold">لوحة السائق</span>
+        </Link>
+      )}
     </div>
   );
 };
