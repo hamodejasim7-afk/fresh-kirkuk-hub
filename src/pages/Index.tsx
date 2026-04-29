@@ -59,6 +59,61 @@ const Index = () => {
     localStorage.setItem("fresh_cart", JSON.stringify(cart));
   }, [cart]);
 
+  // Background new-order watcher for admin/accountant browsing the storefront
+  const seenOrderIdsRef = useRef<Set<string>>(new Set());
+  const watcherInitRef = useRef(false);
+  useEffect(() => {
+    if (!user || (role !== "admin" && role !== "accountant")) return;
+
+    ensureNotificationPermission().catch(() => {});
+
+    const checkNew = async () => {
+      const { data } = await supabase
+        .from("orders")
+        .select("id, customer_name, total_iqd, created_at, status")
+        .is("archived_at", null)
+        .eq("status", "new")
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (!data) return;
+      const ids = new Set(data.map((o) => o.id));
+      if (!watcherInitRef.current) {
+        seenOrderIdsRef.current = ids;
+        watcherInitRef.current = true;
+        return;
+      }
+      const fresh = data.filter((o) => !seenOrderIdsRef.current.has(o.id));
+      fresh.forEach((o) => {
+        toast.success(`🔔 طلب جديد — ${o.customer_name}`, {
+          description: `المبلغ: ${formatIQD(o.total_iqd)}`,
+          duration: 9000,
+          action: { label: "افتح الإدارة", onClick: () => navigate("/admin") },
+        });
+        showOrderNotification({
+          title: "فريش — طلب جديد وصل",
+          body: `${o.customer_name} • ${formatIQD(o.total_iqd)}`,
+          tag: `bg-order-${o.id}`,
+          onClick: () => navigate("/admin"),
+        });
+      });
+      seenOrderIdsRef.current = ids;
+    };
+
+    checkNew();
+    const channel = supabase
+      .channel("storefront-order-watch")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders" }, () => checkNew())
+      .subscribe();
+    const t = setInterval(() => {
+      if (document.visibilityState === "visible") checkNew();
+    }, 8000);
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, role]);
+
   const filtered = useMemo(
     () => (activeCat === "الكل" ? products : products.filter((p) => p.category === activeCat)),
     [activeCat, products]
