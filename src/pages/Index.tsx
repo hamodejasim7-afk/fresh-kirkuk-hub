@@ -32,6 +32,7 @@ type CartItem = DBProduct & { qty: number };
 
 const Index = () => {
   const { user, role, signOut } = useAuth();
+  const navigate = useNavigate();
   const { settings: storeSettings, loading } = useStoreSettings();
   const { products } = useProducts({ onlyAvailable: true });
   const { categories } = useCategories({ onlyActive: true });
