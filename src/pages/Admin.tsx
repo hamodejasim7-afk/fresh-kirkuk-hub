@@ -40,6 +40,8 @@ import { STORE_PHONE, STORE_PHONE_TEL, STORE_LOCATION } from "@/lib/constants";
 import { exportOrdersToExcel } from "@/lib/exportExcel";
 import { ensureNotificationPermission, showOrderNotification } from "@/lib/notifications";
 import { formatIQD as fmt } from "@/lib/format";
+import { useStaffPermissions } from "@/hooks/useStaffPermissions";
+import { PermissionsDialog } from "@/components/PermissionsDialog";
 
 interface Order {
   id: string;
