@@ -567,6 +567,28 @@ const Index = () => {
           © {new Date().getFullYear()} فريش Fresh - جميع الحقوق محفوظة
         </div>
       </footer>
+
+      {/* Floating dashboard shortcut — always visible for staff */}
+      {user && (role === "admin" || role === "accountant") && (
+        <Link
+          to="/admin"
+          aria-label="فتح لوحة الإدارة"
+          className="fixed bottom-5 left-5 z-50 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-primary-foreground shadow-2xl hover:bg-primary/90 transition-all hover:scale-105"
+        >
+          <LayoutDashboard className="h-5 w-5" />
+          <span className="text-sm font-bold">لوحة الإدارة</span>
+        </Link>
+      )}
+      {user && role === "driver" && (
+        <Link
+          to="/driver"
+          aria-label="فتح لوحة السائق"
+          className="fixed bottom-5 left-5 z-50 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-primary-foreground shadow-2xl hover:bg-primary/90 transition-all hover:scale-105"
+        >
+          <Truck className="h-5 w-5" />
+          <span className="text-sm font-bold">لوحة السائق</span>
+        </Link>
+      )}
     </div>
   );
 };
