@@ -101,6 +101,7 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
 const Admin = () => {
   const { signOut, user, role } = useAuth();
   const isAdmin = role === "admin";
+  const { perms } = useStaffPermissions();
   const [orders, setOrders] = useState<Order[]>([]);
   const [items, setItems] = useState<Record<string, OrderItem[]>>({});
   const [archivedOrders, setArchivedOrders] = useState<Order[]>([]);
