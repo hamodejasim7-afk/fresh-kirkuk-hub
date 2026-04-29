@@ -520,32 +520,44 @@ const Admin = () => {
     }
   };
 
-  // Permanently delete entire archive (admin only) — exports XLSX first
+  // Permanently delete entire archive (admin only) — exports XLSX first, then hard DELETE
   const purgeArchive = async () => {
     if (!isAdmin) {
       toast.error("هذه العملية للمدير فقط");
       return;
     }
-    // Make sure we have the latest archive loaded
-    await loadArchive();
-    if (archivedOrders.length === 0) {
+    // Fetch latest archive directly (don't rely on state)
+    const { data: archOrders, error: fetchErr } = await supabase
+      .from("orders")
+      .select("*")
+      .not("archived_at", "is", null)
+      .order("archived_at", { ascending: false });
+    if (fetchErr) {
+      toast.error("فشل تحميل الأرشيف: " + fetchErr.message);
+      return;
+    }
+    if (!archOrders || archOrders.length === 0) {
       toast.error("لا يوجد أرشيف لتصفيره");
       return;
     }
+    const ids = archOrders.map((o) => o.id);
+    const { data: archItems } = await supabase
+      .from("order_items").select("*").in("order_id", ids);
+    const itemsMap: Record<string, OrderItem[]> = {};
+    (archItems ?? []).forEach((it) => { (itemsMap[it.order_id] ||= []).push(it as any); });
+
+    // Step 1: Export Excel report (mandatory before deletion)
     const today = new Date().toISOString().slice(0, 10);
     try {
-      exportOrdersToExcel(
-        archivedOrders,
-        archivedItems,
-        `fresh-archive-FINAL-${today}.xlsx`,
-      );
+      exportOrdersToExcel(archOrders as any, itemsMap, `fresh-archive-FINAL-${today}.xlsx`);
     } catch (e) {
       console.error(e);
       toast.error("فشل تصدير التقرير — تم إلغاء التصفير");
       return;
     }
-    // Delete archived orders (order_items will cascade via FK)
-    const ids = archivedOrders.map((o) => o.id);
+    toast.info(`تم حفظ تقرير Excel (${archOrders.length} طلب)... جاري الحذف النهائي`);
+
+    // Step 2: Hard DELETE order_items first (no FK cascade configured)
     const { error: delItemsErr } = await supabase
       .from("order_items")
       .delete()
@@ -554,6 +566,7 @@ const Admin = () => {
       toast.error("فشل حذف عناصر الأرشيف: " + delItemsErr.message);
       return;
     }
+    // Step 3: Hard DELETE orders
     const { error: delErr } = await supabase
       .from("orders")
       .delete()
@@ -562,7 +575,7 @@ const Admin = () => {
       toast.error("فشل حذف الأرشيف: " + delErr.message);
       return;
     }
-    toast.success(`تم تصفير الأرشيف بالكامل (${ids.length} طلب) — مع نسخة Excel`);
+    toast.success(`✅ تم تصفير الأرشيف نهائياً (${ids.length} طلب محذوف) — Excel محفوظ`);
     setArchivedOrders([]);
     setArchivedItems({});
   };
