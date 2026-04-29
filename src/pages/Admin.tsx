@@ -40,6 +40,8 @@ import { STORE_PHONE, STORE_PHONE_TEL, STORE_LOCATION } from "@/lib/constants";
 import { exportOrdersToExcel } from "@/lib/exportExcel";
 import { ensureNotificationPermission, showOrderNotification } from "@/lib/notifications";
 import { formatIQD as fmt } from "@/lib/format";
+import { useStaffPermissions } from "@/hooks/useStaffPermissions";
+import { PermissionsDialog } from "@/components/PermissionsDialog";
 
 interface Order {
   id: string;
@@ -99,6 +101,7 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
 const Admin = () => {
   const { signOut, user, role } = useAuth();
   const isAdmin = role === "admin";
+  const { perms } = useStaffPermissions();
   const [orders, setOrders] = useState<Order[]>([]);
   const [items, setItems] = useState<Record<string, OrderItem[]>>({});
   const [archivedOrders, setArchivedOrders] = useState<Order[]>([]);
@@ -706,16 +709,20 @@ const Admin = () => {
 
         {/* Action bar */}
         <div className="flex flex-wrap items-center gap-2 print:hidden">
-          <Button onClick={printReport} variant="outline" className="gap-2">
-            <Printer className="h-4 w-4" />طباعة التقرير
-          </Button>
+          {(isAdmin || perms.view_reports) && (
+            <Button onClick={printReport} variant="outline" className="gap-2">
+              <Printer className="h-4 w-4" />طباعة التقرير
+            </Button>
+          )}
 
-          <Button
-            onClick={() => exportOrdersToExcel(orders, items, `fresh-active-${new Date().toISOString().slice(0,10)}.xlsx`)}
-            variant="outline" className="gap-2" disabled={orders.length === 0}
-          >
-            <FileSpreadsheet className="h-4 w-4" />تصدير Excel
-          </Button>
+          {(isAdmin || perms.view_reports) && (
+            <Button
+              onClick={() => exportOrdersToExcel(orders, items, `fresh-active-${new Date().toISOString().slice(0,10)}.xlsx`)}
+              variant="outline" className="gap-2" disabled={orders.length === 0}
+            >
+              <FileSpreadsheet className="h-4 w-4" />تصدير Excel
+            </Button>
+          )}
 
           {isAdmin && (
             <AlertDialog>
@@ -746,13 +753,27 @@ const Admin = () => {
 
         <Tabs defaultValue="orders" onValueChange={(v) => { if (v === "archive") loadArchive(); }}>
           <TabsList className="print:hidden flex-wrap h-auto">
-            <TabsTrigger value="orders">الطلبات ({orders.length})</TabsTrigger>
-            <TabsTrigger value="pricing">التسعير</TabsTrigger>
-            <TabsTrigger value="products">المنتجات</TabsTrigger>
-            <TabsTrigger value="categories">الفئات</TabsTrigger>
-            <TabsTrigger value="archive" className="gap-1"><Archive className="h-3.5 w-3.5" />الأرشيف</TabsTrigger>
-            <TabsTrigger value="staff">الموظفون ({staff.length})</TabsTrigger>
-            <TabsTrigger value="drivers">السواق ({drivers.length})</TabsTrigger>
+            {(isAdmin || perms.manage_orders) && (
+              <TabsTrigger value="orders">الطلبات ({orders.length})</TabsTrigger>
+            )}
+            {(isAdmin || perms.manage_pricing) && (
+              <TabsTrigger value="pricing">التسعير</TabsTrigger>
+            )}
+            {(isAdmin || perms.manage_products) && (
+              <TabsTrigger value="products">المنتجات</TabsTrigger>
+            )}
+            {(isAdmin || perms.manage_categories) && (
+              <TabsTrigger value="categories">الفئات</TabsTrigger>
+            )}
+            {(isAdmin || perms.view_reports) && (
+              <TabsTrigger value="archive" className="gap-1"><Archive className="h-3.5 w-3.5" />الأرشيف</TabsTrigger>
+            )}
+            {(isAdmin || perms.manage_drivers) && (
+              <TabsTrigger value="staff">الموظفون ({staff.length})</TabsTrigger>
+            )}
+            {(isAdmin || perms.manage_drivers) && (
+              <TabsTrigger value="drivers">السواق ({drivers.length})</TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="orders" className="mt-4">
@@ -1170,6 +1191,7 @@ const StaffPanel = ({
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState<"driver" | "admin" | "accountant">("driver");
   const [busy, setBusy] = useState(false);
+  const [permsTarget, setPermsTarget] = useState<{ id: string; name: string } | null>(null);
 
   const createStaff = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1398,6 +1420,16 @@ const StaffPanel = ({
                         const target: "driver" | "accountant" = currentSwap === "driver" ? "accountant" : "driver";
                         return (
                           <div className="flex gap-1 flex-wrap">
+                            {isAdmin && !isAdminRow && (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                disabled={busy}
+                                onClick={() => setPermsTarget({ id: s.id, name: s.full_name || "موظف" })}
+                              >
+                                صلاحيات
+                              </Button>
+                            )}
                             {canEditRole && (
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
@@ -1467,6 +1499,15 @@ const StaffPanel = ({
           </Table>
         </div>
       </Card>
+
+      {permsTarget && (
+        <PermissionsDialog
+          open={!!permsTarget}
+          onOpenChange={(o) => !o && setPermsTarget(null)}
+          userId={permsTarget.id}
+          userName={permsTarget.name}
+        />
+      )}
     </div>
   );
 };
