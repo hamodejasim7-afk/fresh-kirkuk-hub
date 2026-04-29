@@ -75,7 +75,12 @@ const Index = () => {
       if (found) return prev.map((i) => (i.id === p.id ? { ...i, qty: i.qty + 1 } : i));
       return [...prev, { ...p, qty: 1 }];
     });
-    toast.success(`تمت إضافة ${p.name}`);
+    // Small side toast (bottom-right) — won't cover the cart icon up top
+    toast.success(`تمت إضافة ${p.name} ✓`, {
+      position: "bottom-right",
+      duration: 2200,
+      className: "text-xs py-2",
+    });
   };
 
   const updateQty = (id: string, delta: number) => {
