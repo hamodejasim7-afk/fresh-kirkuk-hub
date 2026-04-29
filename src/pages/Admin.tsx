@@ -1499,6 +1499,15 @@ const StaffPanel = ({
           </Table>
         </div>
       </Card>
+
+      {permsTarget && (
+        <PermissionsDialog
+          open={!!permsTarget}
+          onOpenChange={(o) => !o && setPermsTarget(null)}
+          userId={permsTarget.id}
+          userName={permsTarget.name}
+        />
+      )}
     </div>
   );
 };
