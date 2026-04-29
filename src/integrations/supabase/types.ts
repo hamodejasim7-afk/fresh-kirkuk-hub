@@ -196,6 +196,42 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_permissions: {
+        Row: {
+          created_at: string
+          manage_categories: boolean
+          manage_drivers: boolean
+          manage_orders: boolean
+          manage_pricing: boolean
+          manage_products: boolean
+          updated_at: string
+          user_id: string
+          view_reports: boolean
+        }
+        Insert: {
+          created_at?: string
+          manage_categories?: boolean
+          manage_drivers?: boolean
+          manage_orders?: boolean
+          manage_pricing?: boolean
+          manage_products?: boolean
+          updated_at?: string
+          user_id: string
+          view_reports?: boolean
+        }
+        Update: {
+          created_at?: string
+          manage_categories?: boolean
+          manage_drivers?: boolean
+          manage_orders?: boolean
+          manage_pricing?: boolean
+          manage_products?: boolean
+          updated_at?: string
+          user_id?: string
+          view_reports?: boolean
+        }
+        Relationships: []
+      }
       store_settings: {
         Row: {
           closed_message: string
