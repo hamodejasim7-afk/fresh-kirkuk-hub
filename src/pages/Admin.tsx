@@ -749,13 +749,27 @@ const Admin = () => {
 
         <Tabs defaultValue="orders" onValueChange={(v) => { if (v === "archive") loadArchive(); }}>
           <TabsList className="print:hidden flex-wrap h-auto">
-            <TabsTrigger value="orders">الطلبات ({orders.length})</TabsTrigger>
-            <TabsTrigger value="pricing">التسعير</TabsTrigger>
-            <TabsTrigger value="products">المنتجات</TabsTrigger>
-            <TabsTrigger value="categories">الفئات</TabsTrigger>
-            <TabsTrigger value="archive" className="gap-1"><Archive className="h-3.5 w-3.5" />الأرشيف</TabsTrigger>
-            <TabsTrigger value="staff">الموظفون ({staff.length})</TabsTrigger>
-            <TabsTrigger value="drivers">السواق ({drivers.length})</TabsTrigger>
+            {(isAdmin || perms.manage_orders) && (
+              <TabsTrigger value="orders">الطلبات ({orders.length})</TabsTrigger>
+            )}
+            {(isAdmin || perms.manage_pricing) && (
+              <TabsTrigger value="pricing">التسعير</TabsTrigger>
+            )}
+            {(isAdmin || perms.manage_products) && (
+              <TabsTrigger value="products">المنتجات</TabsTrigger>
+            )}
+            {(isAdmin || perms.manage_categories) && (
+              <TabsTrigger value="categories">الفئات</TabsTrigger>
+            )}
+            {(isAdmin || perms.view_reports) && (
+              <TabsTrigger value="archive" className="gap-1"><Archive className="h-3.5 w-3.5" />الأرشيف</TabsTrigger>
+            )}
+            {(isAdmin || perms.manage_drivers) && (
+              <TabsTrigger value="staff">الموظفون ({staff.length})</TabsTrigger>
+            )}
+            {(isAdmin || perms.manage_drivers) && (
+              <TabsTrigger value="drivers">السواق ({drivers.length})</TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="orders" className="mt-4">
