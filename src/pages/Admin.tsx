@@ -1420,6 +1420,16 @@ const StaffPanel = ({
                         const target: "driver" | "accountant" = currentSwap === "driver" ? "accountant" : "driver";
                         return (
                           <div className="flex gap-1 flex-wrap">
+                            {isAdmin && !isAdminRow && (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                disabled={busy}
+                                onClick={() => setPermsTarget({ id: s.id, name: s.full_name || "موظف" })}
+                              >
+                                صلاحيات
+                              </Button>
+                            )}
                             {canEditRole && (
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
