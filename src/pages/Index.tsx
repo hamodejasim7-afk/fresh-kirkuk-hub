@@ -207,8 +207,8 @@ const Index = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            {user && role === "admin" && (
-              <Button asChild variant="outline" size="sm" className="gap-1">
+            {user && (role === "admin" || role === "accountant") && (
+              <Button asChild variant="default" size="sm" className="gap-1 shadow-md">
                 <Link to="/admin">
                   <LayoutDashboard className="h-4 w-4" />
                   <span className="hidden sm:inline">لوحة الإدارة</span>
@@ -217,7 +217,7 @@ const Index = () => {
               </Button>
             )}
             {user && role === "driver" && (
-              <Button asChild variant="outline" size="sm" className="gap-1">
+              <Button asChild variant="default" size="sm" className="gap-1 shadow-md">
                 <Link to="/driver">
                   <Truck className="h-4 w-4" />
                   <span className="hidden sm:inline">لوحة السائق</span>
