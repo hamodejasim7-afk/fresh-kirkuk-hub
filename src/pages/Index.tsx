@@ -56,7 +56,10 @@ const Index = () => {
     }
   }, []);
   useEffect(() => {
-    localStorage.setItem("fresh_cart", JSON.stringify(cart));
+    const t = setTimeout(() => {
+      localStorage.setItem("fresh_cart", JSON.stringify(cart));
+    }, 300);
+    return () => clearTimeout(t);
   }, [cart]);
 
   // Background new-order watcher for admin/accountant browsing the storefront
@@ -124,7 +127,11 @@ const Index = () => {
   const deliveryFee = cart.length > 0 ? DELIVERY_FEE_IQD : 0;
   const totalPrice = subtotal + deliveryFee;
 
-  const getCartQty = (id: string) => cart.find((i) => i.id === id)?.qty ?? 0;
+  const cartMap = useMemo(
+    () => Object.fromEntries(cart.map((i) => [i.id, i.qty])),
+    [cart]
+  );
+  const getCartQty = (id: string) => cartMap[id] ?? 0;
 
   const addToCart = (p: DBProduct) => {
     setCart((prev) => {
@@ -320,7 +327,12 @@ const Index = () => {
                         <div key={item.id} className="flex items-center gap-3 rounded-lg border bg-card p-3">
                           <div className="text-3xl">
                             {item.image_url ? (
-                              <img src={item.image_url} alt={item.name} className="h-12 w-12 rounded object-cover" />
+                              <img
+                                src={item.image_url}
+                                alt={item.name}
+                                className="h-12 w-12 rounded object-cover"
+                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                              />
                             ) : (
                               <span>{item.emoji}</span>
                             )}
@@ -518,7 +530,13 @@ const Index = () => {
             <Card key={p.id} className="group overflow-hidden transition-smooth hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
               <div className="flex aspect-square items-center justify-center overflow-hidden bg-accent text-7xl">
                 {p.image_url ? (
-                  <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" loading="lazy" />
+                  <img
+                    src={p.image_url}
+                    alt={p.name}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  />
                 ) : (
                   <span>{p.emoji ?? "📦"}</span>
                 )}
