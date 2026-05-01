@@ -137,6 +137,7 @@ export type Database = {
           is_available: boolean
           name: string
           price_iqd: number
+          pricing_category: string
           sort_order: number
           stock_qty: number | null
           unit: string
@@ -151,6 +152,7 @@ export type Database = {
           is_available?: boolean
           name: string
           price_iqd?: number
+          pricing_category?: string
           sort_order?: number
           stock_qty?: number | null
           unit?: string
@@ -165,6 +167,7 @@ export type Database = {
           is_available?: boolean
           name?: string
           price_iqd?: number
+          pricing_category?: string
           sort_order?: number
           stock_qty?: number | null
           unit?: string
