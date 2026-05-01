@@ -1,4 +1,3 @@
-// Admin-only edge function to delete a staff account
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 
 const corsHeaders = {
@@ -27,16 +26,31 @@ Deno.serve(async (req) => {
     const userClient = createClient(SUPABASE_URL, ANON_KEY, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: userData, error: userErr } = await userClient.auth.getUser();
-    if (userErr || !userData?.user) return json({ error: "Unauthorized" }, 401);
+
+    const token = authHeader.replace("Bearer ", "");
+    let callerId: string;
+
+    if (typeof userClient.auth.getClaims === "function") {
+      const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(token);
+      if (claimsErr || !claimsData?.claims?.sub) {
+        return json({ error: "Unauthorized" }, 401);
+      }
+      callerId = claimsData.claims.sub as string;
+    } else {
+      const { data: userData, error: userErr } = await userClient.auth.getUser(token);
+      if (userErr || !userData?.user) {
+        return json({ error: "Unauthorized" }, 401);
+      }
+      callerId = userData.user.id;
+    }
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
     const { data: isAdmin } = await admin.rpc("has_role", {
-      _user_id: userData.user.id,
+      _user_id: callerId,
       _role: "admin",
     });
     const { data: isAccountant } = await admin.rpc("has_role", {
-      _user_id: userData.user.id,
+      _user_id: callerId,
       _role: "accountant",
     });
     if (!isAdmin && !isAccountant) {
@@ -48,7 +62,7 @@ Deno.serve(async (req) => {
     if (!target || !/^[0-9a-f-]{36}$/i.test(target)) {
       return json({ error: "user_id غير صالح" }, 400);
     }
-    if (target === userData.user.id) {
+    if (target === callerId) {
       return json({ error: "لا يمكنك حذف حسابك الخاص" }, 400);
     }
 

@@ -1,4 +1,3 @@
-// Admin-only edge function to create a staff account (admin or driver)
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 
 const corsHeaders = {
@@ -29,7 +28,7 @@ Deno.serve(async (req) => {
     const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ??
       Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
 
-    // 1) Verify caller is an authenticated admin
+    // 1) Verify caller via JWT claims (no session lookup needed)
     const authHeader = req.headers.get("Authorization") ?? "";
     if (!authHeader.startsWith("Bearer ")) {
       return json({ error: "Unauthorized" }, 401);
@@ -39,20 +38,33 @@ Deno.serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const { data: userData, error: userErr } = await userClient.auth.getUser();
-    if (userErr || !userData?.user) {
-      return json({ error: "Unauthorized" }, 401);
+    const token = authHeader.replace("Bearer ", "");
+    let callerId: string;
+
+    // Try getClaims first (fast, no DB round-trip), fallback to getUser
+    if (typeof userClient.auth.getClaims === "function") {
+      const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(token);
+      if (claimsErr || !claimsData?.claims?.sub) {
+        return json({ error: "Unauthorized" }, 401);
+      }
+      callerId = claimsData.claims.sub as string;
+    } else {
+      const { data: userData, error: userErr } = await userClient.auth.getUser(token);
+      if (userErr || !userData?.user) {
+        return json({ error: "Unauthorized" }, 401);
+      }
+      callerId = userData.user.id;
     }
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
     // Check role using has_role function via service-role
     const { data: isAdminData } = await admin.rpc("has_role", {
-      _user_id: userData.user.id,
+      _user_id: callerId,
       _role: "admin",
     });
     const { data: isAccountantData } = await admin.rpc("has_role", {
-      _user_id: userData.user.id,
+      _user_id: callerId,
       _role: "accountant",
     });
     const isAdmin = !!isAdminData;
