@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/sheet";
 import {
   ShoppingCart, Plus, Minus, Trash2, Phone, MapPin, User,
-  Instagram, Facebook, LogIn, LayoutDashboard, Truck, Clock,
+  Instagram, Facebook, LogIn, LayoutDashboard, Truck, Clock, Search,
 } from "lucide-react";
 import { toast } from "sonner";
 import freshLogo from "@/assets/fresh-logo.png";
@@ -42,6 +42,7 @@ const Index = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [customer, setCustomer] = useState({ name: "", phone: "", address: "", notes: "" });
+  const [searchQuery, setSearchQuery] = useState("");
 
   const allCategories = useMemo(
     () => ["الكل", ...categories.map((c) => c.name)],
@@ -117,10 +118,19 @@ const Index = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, role]);
 
-  const filtered = useMemo(
-    () => (activeCat === "الكل" ? products : products.filter((p) => p.category === activeCat)),
-    [activeCat, products]
-  );
+  const filtered = useMemo(() => {
+    let result = activeCat === "الكل"
+      ? products
+      : products.filter((p) => p.category === activeCat);
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter((p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [activeCat, products, searchQuery]);
 
   const totalQty = cart.reduce((s, i) => s + i.qty, 0);
   const subtotal = cart.reduce((s, i) => s + i.qty * i.price_iqd, 0);
@@ -546,6 +556,27 @@ ${itemsList}
         </div>
       </section>
 
+      {/* Search */}
+      <section className="container mx-auto px-4 pb-2">
+        <div className="relative max-w-md">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="ابحث عن منتج..."
+            className="pr-10"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-sm"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      </section>
+
       {/* Products */}
       <section className="container mx-auto px-4 pb-12">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -590,6 +621,11 @@ ${itemsList}
             </Card>
           ))}
         </div>
+        {filtered.length === 0 && searchQuery && (
+          <p className="py-16 text-center text-muted-foreground text-lg">
+            لا توجد نتائج لـ "{searchQuery}"
+          </p>
+        )}
       </section>
 
       {/* Footer */}
