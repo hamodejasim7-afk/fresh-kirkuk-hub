@@ -264,7 +264,7 @@ const Index = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            {user && (role === "admin" || role === "accountant") && (
+            {user && (role?.trim().toLowerCase() === "admin" || role?.trim().toLowerCase() === "accountant") && (
               <Button asChild variant="default" size="sm" className="gap-1 shadow-md">
                 <Link to="/admin">
                   <LayoutDashboard className="h-4 w-4" />
@@ -315,7 +315,7 @@ const Index = () => {
                   {cart.length === 0 ? (
                     <p className="py-12 text-center text-muted-foreground">السلة فارغة</p>
                   ) : (
-                    <div className="space-y-3">
+                     <div className="space-y-3">
                       {cart.map((item) => (
                         <div key={item.id} className="flex items-center gap-3 rounded-lg border bg-card p-3">
                           <div className="text-3xl">
@@ -343,6 +343,19 @@ const Index = () => {
                           </Button>
                         </div>
                       ))}
+
+                      <Button
+                        variant="destructive"
+                        className="w-full gap-2"
+                        onClick={() => {
+                          setCart([]);
+                          localStorage.removeItem("fresh_cart");
+                          toast.success("تم تفريغ السلة ✓");
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        تفريغ السلة
+                      </Button>
 
                       <div className="space-y-3 rounded-lg border bg-accent p-4">
                         <h3 className="font-semibold text-accent-foreground">معلومات الزبون</h3>
@@ -569,7 +582,7 @@ const Index = () => {
       </footer>
 
       {/* Floating dashboard shortcut — always visible for staff */}
-      {user && (role === "admin" || role === "accountant") && (
+      {user && (role?.trim().toLowerCase() === "admin" || role?.trim().toLowerCase() === "accountant") && (
         <Link
           to="/admin"
           aria-label="فتح لوحة الإدارة"
