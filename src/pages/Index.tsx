@@ -250,6 +250,7 @@ ${itemsList}
       if (itemsErr) throw itemsErr;
 
       toast.success("تم استلام طلبك! سنتصل بك قريباً.");
+      openWhatsApp(orderId);
       setCart([]);
       setCustomer({ name: "", phone: "", address: "", notes: "" });
       setConfirmOpen(false);
