@@ -176,6 +176,28 @@ const Index = () => {
     setConfirmOpen(true);
   };
 
+  const openWhatsApp = (orderId: string) => {
+    const itemsList = cart
+      .map((item) => `• ${item.name} × ${item.qty} = ${formatIQD(item.price_iqd * item.qty)}`)
+      .join("\n");
+    const message = `🛒 *طلب جديد من فريش Fresh*
+━━━━━━━━━━━━━━
+👤 الاسم: ${customer.name}
+📞 الهاتف: ${customer.phone}
+📍 العنوان: ${customer.address}
+${customer.notes ? `📝 ملاحظات: ${customer.notes}` : ""}
+━━━━━━━━━━━━━━
+${itemsList}
+━━━━━━━━━━━━━━
+🛵 رسوم التوصيل: ${formatIQD(DELIVERY_FEE_IQD)}
+💰 *المجموع الكلي: ${formatIQD(totalPrice)}*
+━━━━━━━━━━━━━━
+🔖 رقم الطلب: ${orderId.slice(0, 8).toUpperCase()}`;
+    const phone = STORE_PHONE_TEL.replace(/\D/g, "");
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank");
+  };
+
   const submitOrder = async () => {
     const validatedCustomer = validateCustomer();
     if (!validatedCustomer) return;
@@ -228,6 +250,7 @@ const Index = () => {
       if (itemsErr) throw itemsErr;
 
       toast.success("تم استلام طلبك! سنتصل بك قريباً.");
+      openWhatsApp(orderId);
       setCart([]);
       setCustomer({ name: "", phone: "", address: "", notes: "" });
       setConfirmOpen(false);
