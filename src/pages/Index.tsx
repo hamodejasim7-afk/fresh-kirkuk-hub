@@ -407,7 +407,23 @@ ${itemsList}
 
                 <div className="flex-1 overflow-y-auto py-4">
                   {cart.length === 0 ? (
-                    <p className="py-12 text-center text-muted-foreground">السلة فارغة</p>
+                    <div className="py-8 text-center space-y-4">
+                      <p className="text-muted-foreground">السلة فارغة</p>
+                      {lastOrder.length > 0 && (
+                        <div className="rounded-lg border bg-accent/40 p-4 text-right space-y-3">
+                          <p className="text-sm font-semibold">🔄 آخر طلب:</p>
+                          {lastOrder.map((item) => (
+                            <div key={item.id} className="flex justify-between text-sm">
+                              <span>{item.name} × {item.qty}</span>
+                              <span className="text-muted-foreground">{formatIQD(item.price_iqd * item.qty)}</span>
+                            </div>
+                          ))}
+                          <Button onClick={reorder} className="w-full gap-2 mt-2">
+                            🔄 اطلب مرة ثانية
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   ) : (
                      <div className="space-y-3">
                       {cart.map((item) => (
