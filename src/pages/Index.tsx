@@ -43,6 +43,12 @@ const Index = () => {
   const [submitting, setSubmitting] = useState(false);
   const [customer, setCustomer] = useState({ name: "", phone: "", address: "", notes: "" });
   const [searchQuery, setSearchQuery] = useState("");
+  const [lastOrder, setLastOrder] = useState<CartItem[]>(() => {
+    try {
+      const saved = localStorage.getItem("fresh_last_order");
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
   const [trackOpen, setTrackOpen] = useState(false);
   const [trackPhone, setTrackPhone] = useState("");
   const [trackOrders, setTrackOrders] = useState<any[]>([]);
@@ -265,6 +271,8 @@ ${itemsList}
 
       toast.success("تم استلام طلبك! سنتصل بك قريباً.");
       openWhatsApp(orderId);
+      setLastOrder(cart);
+      localStorage.setItem("fresh_last_order", JSON.stringify(cart));
       setCart([]);
       setCustomer({ name: "", phone: "", address: "", notes: "" });
       setConfirmOpen(false);
@@ -321,6 +329,17 @@ ${itemsList}
     delivered:  { text: "🏠 تم التوصيل",             color: "bg-emerald-100 text-emerald-800" },
     cancelled:  { text: "❌ ملغي",                   color: "bg-red-100 text-red-800" },
   } as Record<string, { text: string; color: string }>)[s] ?? { text: s, color: "bg-gray-100 text-gray-800" };
+
+  const reorder = () => {
+    if (!lastOrder.length) return;
+    const updated = lastOrder.map((item) => {
+      const currentProduct = products.find((p) => p.id === item.id);
+      return currentProduct ? { ...currentProduct, qty: item.qty } : item;
+    });
+    setCart(updated);
+    setCartOpen(true);
+    toast.success("تمت إضافة الطلب السابق للسلة ✓", { position: "bottom-right" });
+  };
 
   return (
     <div dir="rtl" className="min-h-screen bg-background">
@@ -388,7 +407,23 @@ ${itemsList}
 
                 <div className="flex-1 overflow-y-auto py-4">
                   {cart.length === 0 ? (
-                    <p className="py-12 text-center text-muted-foreground">السلة فارغة</p>
+                    <div className="py-8 text-center space-y-4">
+                      <p className="text-muted-foreground">السلة فارغة</p>
+                      {lastOrder.length > 0 && (
+                        <div className="rounded-lg border bg-accent/40 p-4 text-right space-y-3">
+                          <p className="text-sm font-semibold">🔄 آخر طلب:</p>
+                          {lastOrder.map((item) => (
+                            <div key={item.id} className="flex justify-between text-sm">
+                              <span>{item.name} × {item.qty}</span>
+                              <span className="text-muted-foreground">{formatIQD(item.price_iqd * item.qty)}</span>
+                            </div>
+                          ))}
+                          <Button onClick={reorder} className="w-full gap-2 mt-2">
+                            🔄 اطلب مرة ثانية
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   ) : (
                      <div className="space-y-3">
                       {cart.map((item) => (
