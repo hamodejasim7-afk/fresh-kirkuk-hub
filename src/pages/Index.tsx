@@ -573,6 +573,13 @@ ${itemsList}
               <Badge variant="secondary" className="px-3 py-1.5 text-sm">✓ أسعار الجملة</Badge>
               <Badge variant="secondary" className="px-3 py-1.5 text-sm">✓ منتجات طازجة يومياً</Badge>
             </div>
+            <Button
+              variant="outline"
+              className="gap-2 mt-2"
+              onClick={() => setTrackOpen(true)}
+            >
+              🔍 تتبع طلبك
+            </Button>
           </div>
           <div className="flex justify-center">
             <img src={freshLogo} alt="فريش Fresh" className="w-full max-w-sm drop-shadow-xl" />
