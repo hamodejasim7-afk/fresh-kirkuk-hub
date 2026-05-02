@@ -330,6 +330,17 @@ ${itemsList}
     cancelled:  { text: "❌ ملغي",                   color: "bg-red-100 text-red-800" },
   } as Record<string, { text: string; color: string }>)[s] ?? { text: s, color: "bg-gray-100 text-gray-800" };
 
+  const reorder = () => {
+    if (!lastOrder.length) return;
+    const updated = lastOrder.map((item) => {
+      const currentProduct = products.find((p) => p.id === item.id);
+      return currentProduct ? { ...currentProduct, qty: item.qty } : item;
+    });
+    setCart(updated);
+    setCartOpen(true);
+    toast.success("تمت إضافة الطلب السابق للسلة ✓", { position: "bottom-right" });
+  };
+
   return (
     <div dir="rtl" className="min-h-screen bg-background">
       {/* Header */}
