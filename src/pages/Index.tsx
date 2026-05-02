@@ -721,6 +721,70 @@ ${itemsList}
           <span className="text-sm font-bold">لوحة السائق</span>
         </Link>
       )}
+
+      <Dialog open={trackOpen} onOpenChange={(o) => { setTrackOpen(o); if (!o) { setTrackOrders([]); setTrackPhone(""); } }}>
+        <DialogContent dir="rtl" className="sm:max-w-lg">
+          <DialogHeader className="text-right">
+            <DialogTitle className="text-xl">🔍 تتبع طلبك</DialogTitle>
+            <DialogDescription>أدخل رقم هاتفك لمعرفة حالة طلباتك الأخيرة</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <Input
+                value={trackPhone}
+                onChange={(e) => setTrackPhone(e.target.value)}
+                placeholder="07XX XXX XXXX"
+                type="tel"
+                dir="ltr"
+                onKeyDown={(e) => e.key === "Enter" && trackOrder()}
+              />
+              <Button onClick={trackOrder} disabled={trackLoading}>
+                {trackLoading ? "..." : "بحث"}
+              </Button>
+            </div>
+            {trackOrders.length === 0 && !trackLoading && trackPhone && (
+              <p className="text-center text-muted-foreground py-6">لا توجد طلبات لهذا الرقم</p>
+            )}
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {trackOrders.map((order) => {
+                const sl = statusLabel(order.status);
+                return (
+                  <div key={order.id} className="rounded-lg border bg-card p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground font-mono">
+                        #{order.id.slice(0, 8).toUpperCase()}
+                      </span>
+                      <span className={`text-xs font-semibold px-2 py-1 rounded-full ${sl.color}`}>
+                        {sl.text}
+                      </span>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {new Date(order.created_at).toLocaleDateString("ar-IQ", {
+                        year: "numeric", month: "short", day: "numeric",
+                        hour: "2-digit", minute: "2-digit",
+                      })}
+                    </div>
+                    {order.order_items && order.order_items.length > 0 && (
+                      <ul className="text-sm space-y-1 border-t pt-2">
+                        {order.order_items.map((it: any, idx: number) => (
+                          <li key={idx} className="flex justify-between">
+                            <span>{it.product_name} × {it.quantity}</span>
+                            <span className="text-muted-foreground">{formatIQD(it.price_iqd * it.quantity)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <div className="flex justify-between border-t pt-2 font-bold text-primary">
+                      <span>المجموع</span>
+                      <span>{formatIQD(order.total_iqd)}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
