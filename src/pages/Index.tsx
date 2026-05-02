@@ -43,6 +43,12 @@ const Index = () => {
   const [submitting, setSubmitting] = useState(false);
   const [customer, setCustomer] = useState({ name: "", phone: "", address: "", notes: "" });
   const [searchQuery, setSearchQuery] = useState("");
+  const [lastOrder, setLastOrder] = useState<CartItem[]>(() => {
+    try {
+      const saved = localStorage.getItem("fresh_last_order");
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
   const [trackOpen, setTrackOpen] = useState(false);
   const [trackPhone, setTrackPhone] = useState("");
   const [trackOrders, setTrackOrders] = useState<any[]>([]);
