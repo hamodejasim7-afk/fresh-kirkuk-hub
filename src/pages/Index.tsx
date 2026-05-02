@@ -43,6 +43,10 @@ const Index = () => {
   const [submitting, setSubmitting] = useState(false);
   const [customer, setCustomer] = useState({ name: "", phone: "", address: "", notes: "" });
   const [searchQuery, setSearchQuery] = useState("");
+  const [trackOpen, setTrackOpen] = useState(false);
+  const [trackPhone, setTrackPhone] = useState("");
+  const [trackOrders, setTrackOrders] = useState<any[]>([]);
+  const [trackLoading, setTrackLoading] = useState(false);
 
   const allCategories = useMemo(
     () => ["الكل", ...categories.map((c) => c.name)],
@@ -286,6 +290,37 @@ ${itemsList}
       setSubmitting(false);
     }
   };
+
+  const trackOrder = async () => {
+    if (!trackPhone.trim() || trackPhone.trim().length < 10) {
+      toast.error("أدخل رقم هاتف صحيح");
+      return;
+    }
+    setTrackLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, status, total_iqd, created_at, customer_name, order_items(product_name, quantity, price_iqd)")
+        .eq("customer_phone", trackPhone.trim())
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      setTrackOrders(data ?? []);
+    } catch {
+      toast.error("تعذّر تحميل الطلبات");
+    } finally {
+      setTrackLoading(false);
+    }
+  };
+
+  const statusLabel = (s: string) => ({
+    new:        { text: "🆕 جديد — قيد المراجعة",  color: "bg-blue-100 text-blue-800" },
+    confirmed:  { text: "✅ تم التأكيد",             color: "bg-green-100 text-green-800" },
+    preparing:  { text: "👨‍🍳 قيد التحضير",           color: "bg-yellow-100 text-yellow-800" },
+    delivering: { text: "🛵 خرج للتوصيل",            color: "bg-orange-100 text-orange-800" },
+    delivered:  { text: "🏠 تم التوصيل",             color: "bg-emerald-100 text-emerald-800" },
+    cancelled:  { text: "❌ ملغي",                   color: "bg-red-100 text-red-800" },
+  } as Record<string, { text: string; color: string }>)[s] ?? { text: s, color: "bg-gray-100 text-gray-800" };
 
   return (
     <div dir="rtl" className="min-h-screen bg-background">
@@ -538,6 +573,13 @@ ${itemsList}
               <Badge variant="secondary" className="px-3 py-1.5 text-sm">✓ أسعار الجملة</Badge>
               <Badge variant="secondary" className="px-3 py-1.5 text-sm">✓ منتجات طازجة يومياً</Badge>
             </div>
+            <Button
+              variant="outline"
+              className="gap-2 mt-2"
+              onClick={() => setTrackOpen(true)}
+            >
+              🔍 تتبع طلبك
+            </Button>
           </div>
           <div className="flex justify-center">
             <img src={freshLogo} alt="فريش Fresh" className="w-full max-w-sm drop-shadow-xl" />
@@ -679,6 +721,70 @@ ${itemsList}
           <span className="text-sm font-bold">لوحة السائق</span>
         </Link>
       )}
+
+      <Dialog open={trackOpen} onOpenChange={(o) => { setTrackOpen(o); if (!o) { setTrackOrders([]); setTrackPhone(""); } }}>
+        <DialogContent dir="rtl" className="sm:max-w-lg">
+          <DialogHeader className="text-right">
+            <DialogTitle className="text-xl">🔍 تتبع طلبك</DialogTitle>
+            <DialogDescription>أدخل رقم هاتفك لمعرفة حالة طلباتك الأخيرة</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <Input
+                value={trackPhone}
+                onChange={(e) => setTrackPhone(e.target.value)}
+                placeholder="07XX XXX XXXX"
+                type="tel"
+                dir="ltr"
+                onKeyDown={(e) => e.key === "Enter" && trackOrder()}
+              />
+              <Button onClick={trackOrder} disabled={trackLoading}>
+                {trackLoading ? "..." : "بحث"}
+              </Button>
+            </div>
+            {trackOrders.length === 0 && !trackLoading && trackPhone && (
+              <p className="text-center text-muted-foreground py-6">لا توجد طلبات لهذا الرقم</p>
+            )}
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {trackOrders.map((order) => {
+                const sl = statusLabel(order.status);
+                return (
+                  <div key={order.id} className="rounded-lg border bg-card p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground font-mono">
+                        #{order.id.slice(0, 8).toUpperCase()}
+                      </span>
+                      <span className={`text-xs font-semibold px-2 py-1 rounded-full ${sl.color}`}>
+                        {sl.text}
+                      </span>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {new Date(order.created_at).toLocaleDateString("ar-IQ", {
+                        year: "numeric", month: "short", day: "numeric",
+                        hour: "2-digit", minute: "2-digit",
+                      })}
+                    </div>
+                    {order.order_items && order.order_items.length > 0 && (
+                      <ul className="text-sm space-y-1 border-t pt-2">
+                        {order.order_items.map((it: any, idx: number) => (
+                          <li key={idx} className="flex justify-between">
+                            <span>{it.product_name} × {it.quantity}</span>
+                            <span className="text-muted-foreground">{formatIQD(it.price_iqd * it.quantity)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <div className="flex justify-between border-t pt-2 font-bold text-primary">
+                      <span>المجموع</span>
+                      <span>{formatIQD(order.total_iqd)}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
