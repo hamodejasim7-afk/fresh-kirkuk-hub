@@ -271,6 +271,8 @@ ${itemsList}
 
       toast.success("تم استلام طلبك! سنتصل بك قريباً.");
       openWhatsApp(orderId);
+      setLastOrder(cart);
+      localStorage.setItem("fresh_last_order", JSON.stringify(cart));
       setCart([]);
       setCustomer({ name: "", phone: "", address: "", notes: "" });
       setConfirmOpen(false);
