@@ -43,6 +43,10 @@ const Index = () => {
   const [submitting, setSubmitting] = useState(false);
   const [customer, setCustomer] = useState({ name: "", phone: "", address: "", notes: "" });
   const [searchQuery, setSearchQuery] = useState("");
+  const [trackOpen, setTrackOpen] = useState(false);
+  const [trackPhone, setTrackPhone] = useState("");
+  const [trackOrders, setTrackOrders] = useState<any[]>([]);
+  const [trackLoading, setTrackLoading] = useState(false);
 
   const allCategories = useMemo(
     () => ["الكل", ...categories.map((c) => c.name)],
