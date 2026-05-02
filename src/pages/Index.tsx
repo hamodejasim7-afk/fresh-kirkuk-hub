@@ -291,6 +291,37 @@ ${itemsList}
     }
   };
 
+  const trackOrder = async () => {
+    if (!trackPhone.trim() || trackPhone.trim().length < 10) {
+      toast.error("أدخل رقم هاتف صحيح");
+      return;
+    }
+    setTrackLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, status, total_iqd, created_at, customer_name, order_items(product_name, quantity, price_iqd)")
+        .eq("customer_phone", trackPhone.trim())
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      setTrackOrders(data ?? []);
+    } catch {
+      toast.error("تعذّر تحميل الطلبات");
+    } finally {
+      setTrackLoading(false);
+    }
+  };
+
+  const statusLabel = (s: string) => ({
+    new:        { text: "🆕 جديد — قيد المراجعة",  color: "bg-blue-100 text-blue-800" },
+    confirmed:  { text: "✅ تم التأكيد",             color: "bg-green-100 text-green-800" },
+    preparing:  { text: "👨‍🍳 قيد التحضير",           color: "bg-yellow-100 text-yellow-800" },
+    delivering: { text: "🛵 خرج للتوصيل",            color: "bg-orange-100 text-orange-800" },
+    delivered:  { text: "🏠 تم التوصيل",             color: "bg-emerald-100 text-emerald-800" },
+    cancelled:  { text: "❌ ملغي",                   color: "bg-red-100 text-red-800" },
+  } as Record<string, { text: string; color: string }>)[s] ?? { text: s, color: "bg-gray-100 text-gray-800" };
+
   return (
     <div dir="rtl" className="min-h-screen bg-background">
       {/* Header */}
