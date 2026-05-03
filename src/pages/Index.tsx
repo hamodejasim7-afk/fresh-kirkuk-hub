@@ -568,7 +568,7 @@ ${itemsList}
               <p className="text-sm text-muted-foreground">المنتجات ({totalQty})</p>
               {cart.map((it) => (
                 <div key={it.id} className="flex justify-between text-lg font-medium">
-                  <span>{it.name} × <span className="font-bold">{it.qty}</span></span>
+                  <span>{it.name} × <span className="font-bold">{formatQty(it.qty)} {it.unit}</span></span>
                   <span className="font-bold">{formatIQD(it.price_iqd * it.qty)}</span>
                 </div>
               ))}
