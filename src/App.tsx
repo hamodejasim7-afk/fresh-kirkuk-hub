@@ -10,6 +10,7 @@ import Auth from "./pages/Auth.tsx";
 import Admin from "./pages/Admin.tsx";
 import Driver from "./pages/Driver.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import DailyReport from "@/pages/DailyReport";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route path="/report" element={<DailyReport />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

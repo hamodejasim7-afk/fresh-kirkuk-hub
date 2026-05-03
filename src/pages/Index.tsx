@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/sheet";
 import {
   ShoppingCart, Plus, Minus, Trash2, Phone, MapPin, User,
-  Instagram, Facebook, LogIn, LayoutDashboard, Truck, Clock, Search,
+  Instagram, Facebook, LogIn, LayoutDashboard, Truck, Clock, Search, TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import freshLogo from "@/assets/fresh-logo.png";
@@ -773,6 +773,17 @@ ${itemsList}
           © {new Date().getFullYear()} فريش Fresh - جميع الحقوق محفوظة
         </div>
       </footer>
+
+      {user && (role?.trim().toLowerCase() === "admin" || role?.trim().toLowerCase() === "accountant") && (
+        <Link
+          to="/report"
+          aria-label="التقرير اليومي"
+          className="fixed bottom-20 left-5 z-50 flex items-center gap-2 rounded-full bg-secondary px-4 py-3 text-secondary-foreground shadow-2xl hover:bg-secondary/90 transition-all hover:scale-105"
+        >
+          <TrendingUp className="h-5 w-5" />
+          <span className="text-sm font-bold">تقرير اليوم</span>
+        </Link>
+      )}
 
       {/* Floating dashboard shortcut — always visible for staff */}
       {user && (role?.trim().toLowerCase() === "admin" || role?.trim().toLowerCase() === "accountant") && (
