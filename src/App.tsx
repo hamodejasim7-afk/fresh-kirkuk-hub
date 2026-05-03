@@ -10,6 +10,7 @@ import Auth from "./pages/Auth.tsx";
 import Admin from "./pages/Admin.tsx";
 import Driver from "./pages/Driver.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import DailyReport from "@/pages/DailyReport";
 
 const queryClient = new QueryClient();
 
