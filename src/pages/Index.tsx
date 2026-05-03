@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/sheet";
 import {
   ShoppingCart, Plus, Minus, Trash2, Phone, MapPin, User,
-  Instagram, Facebook, LogIn, LayoutDashboard, Truck, Clock, Search,
+  Instagram, Facebook, LogIn, LayoutDashboard, Truck, Clock, Search, TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import freshLogo from "@/assets/fresh-logo.png";
