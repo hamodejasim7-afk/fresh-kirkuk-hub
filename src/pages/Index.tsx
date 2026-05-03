@@ -209,7 +209,7 @@ const Index = () => {
 
   const openWhatsApp = (orderId: string) => {
     const itemsList = cart
-      .map((item) => `• ${item.name} × ${item.qty} = ${formatIQD(item.price_iqd * item.qty)}`)
+      .map((item) => `• ${item.name} × ${formatQty(item.qty)} ${item.unit} = ${formatIQD(item.price_iqd * item.qty)}`)
       .join("\n");
     const message = `🛒 *طلب جديد من فريش Fresh*
 ━━━━━━━━━━━━━━
