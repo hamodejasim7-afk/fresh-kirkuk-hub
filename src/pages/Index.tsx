@@ -157,14 +157,14 @@ const Index = () => {
   );
   const getCartQty = (id: string) => cartMap[id] ?? 0;
 
-  const addToCart = (p: DBProduct) => {
+  const addToCart = (p: DBProduct, qty: number = 1) => {
     setCart((prev) => {
       const found = prev.find((i) => i.id === p.id);
-      if (found) return prev.map((i) => (i.id === p.id ? { ...i, qty: i.qty + 1 } : i));
-      return [...prev, { ...p, qty: 1 }];
+      if (found) return prev.map((i) => (i.id === p.id ? { ...i, qty: i.qty + qty } : i));
+      return [...prev, { ...p, qty }];
     });
-    // Small side toast (bottom-right) — won't cover the cart icon up top
-    toast.success(`تمت إضافة ${p.name} ✓`, {
+    const qtyLabel = qty === 0.5 ? "نصف كيلو" : qty === 0.25 ? "ربع كيلو" : `${qty}`;
+    toast.success(`تمت إضافة ${qtyLabel} ${p.name} ✓`, {
       position: "bottom-right",
       duration: 2200,
       className: "text-xs py-2",
@@ -175,6 +175,13 @@ const Index = () => {
     setCart((prev) =>
       prev.map((i) => (i.id === id ? { ...i, qty: i.qty + delta } : i)).filter((i) => i.qty > 0)
     );
+  };
+  const setQty = (id: string, qty: number) => {
+    if (qty <= 0) {
+      setCart((prev) => prev.filter((i) => i.id !== id));
+    } else {
+      setCart((prev) => prev.map((i) => (i.id === id ? { ...i, qty } : i)));
+    }
   };
   const removeItem = (id: string) => setCart((prev) => prev.filter((i) => i.id !== id));
 
