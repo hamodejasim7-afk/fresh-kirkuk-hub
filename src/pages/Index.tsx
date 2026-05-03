@@ -691,18 +691,46 @@ ${itemsList}
                   <span className="text-xs text-muted-foreground">/ {p.unit}</span>
                 </div>
                 {getCartQty(p.id) === 0 ? (
-                  <Button onClick={() => addToCart(p)} className="w-full gap-1" size="sm">
-                    <Plus className="h-4 w-4" /> أضف للسلة
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button onClick={() => addToCart(p, 0.5)} variant="outline" className="flex-1 text-xs h-8" size="sm">
+                      ½ كغ
+                    </Button>
+                    <Button onClick={() => addToCart(p, 1)} className="flex-1 text-xs h-8" size="sm">
+                      1 كغ
+                    </Button>
+                    <Button onClick={() => addToCart(p, 2)} variant="outline" className="flex-1 text-xs h-8" size="sm">
+                      2 كغ
+                    </Button>
+                  </div>
                 ) : (
-                  <div className="flex items-center justify-between gap-1 rounded-md border bg-accent/30 p-1">
-                    <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => updateQty(p.id, -1)}>
-                      <Minus className="h-3 w-3" />
+                  <div className="flex items-center gap-1 rounded-md border bg-accent/30 p-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-destructive shrink-0"
+                      onClick={() => removeItem(p.id)}
+                    >
+                      <Trash2 className="h-3 w-3" />
                     </Button>
-                    <span className="font-bold text-base">{getCartQty(p.id)}</span>
-                    <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => updateQty(p.id, 1)}>
-                      <Plus className="h-3 w-3" />
-                    </Button>
+                    <input
+                      type="number"
+                      step="0.25"
+                      min="0.25"
+                      value={qtyInputs[p.id] ?? formatQty(getCartQty(p.id))}
+                      onChange={(e) => {
+                        setQtyInputs((prev) => ({ ...prev, [p.id]: e.target.value }));
+                        const val = parseFloat(e.target.value);
+                        if (!isNaN(val) && val > 0) setQty(p.id, val);
+                      }}
+                      onBlur={() => setQtyInputs((prev) => {
+                        const { [p.id]: _, ...rest } = prev;
+                        return rest;
+                      })}
+                      className="w-full text-center text-sm font-bold bg-transparent border-none outline-none"
+                    />
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      {p.unit}
+                    </span>
                   </div>
                 )}
               </div>
