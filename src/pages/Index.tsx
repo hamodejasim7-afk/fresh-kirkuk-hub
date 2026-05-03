@@ -425,7 +425,7 @@ ${itemsList}
                           <p className="text-sm font-semibold">🔄 آخر طلب:</p>
                           {lastOrder.map((item) => (
                             <div key={item.id} className="flex justify-between text-sm">
-                              <span>{item.name} × {item.qty}</span>
+                              <span>{item.name} × {formatQty(item.qty)} {item.unit}</span>
                               <span className="text-muted-foreground">{formatIQD(item.price_iqd * item.qty)}</span>
                             </div>
                           ))}
