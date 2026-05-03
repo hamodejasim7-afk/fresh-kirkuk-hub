@@ -53,6 +53,10 @@ const Index = () => {
   const [trackPhone, setTrackPhone] = useState("");
   const [trackOrders, setTrackOrders] = useState<any[]>([]);
   const [trackLoading, setTrackLoading] = useState(false);
+  const [qtyInputs, setQtyInputs] = useState<Record<string, string>>({});
+
+  const formatQty = (q: number) =>
+    q % 1 === 0 ? String(q) : q.toFixed(2).replace(/\.?0+$/, "");
 
   const allCategories = useMemo(
     () => ["الكل", ...categories.map((c) => c.name)],
@@ -153,14 +157,14 @@ const Index = () => {
   );
   const getCartQty = (id: string) => cartMap[id] ?? 0;
 
-  const addToCart = (p: DBProduct) => {
+  const addToCart = (p: DBProduct, qty: number = 1) => {
     setCart((prev) => {
       const found = prev.find((i) => i.id === p.id);
-      if (found) return prev.map((i) => (i.id === p.id ? { ...i, qty: i.qty + 1 } : i));
-      return [...prev, { ...p, qty: 1 }];
+      if (found) return prev.map((i) => (i.id === p.id ? { ...i, qty: i.qty + qty } : i));
+      return [...prev, { ...p, qty }];
     });
-    // Small side toast (bottom-right) — won't cover the cart icon up top
-    toast.success(`تمت إضافة ${p.name} ✓`, {
+    const qtyLabel = qty === 0.5 ? "نصف كيلو" : qty === 0.25 ? "ربع كيلو" : `${qty}`;
+    toast.success(`تمت إضافة ${qtyLabel} ${p.name} ✓`, {
       position: "bottom-right",
       duration: 2200,
       className: "text-xs py-2",
@@ -171,6 +175,13 @@ const Index = () => {
     setCart((prev) =>
       prev.map((i) => (i.id === id ? { ...i, qty: i.qty + delta } : i)).filter((i) => i.qty > 0)
     );
+  };
+  const setQty = (id: string, qty: number) => {
+    if (qty <= 0) {
+      setCart((prev) => prev.filter((i) => i.id !== id));
+    } else {
+      setCart((prev) => prev.map((i) => (i.id === id ? { ...i, qty } : i)));
+    }
   };
   const removeItem = (id: string) => setCart((prev) => prev.filter((i) => i.id !== id));
 
@@ -198,7 +209,7 @@ const Index = () => {
 
   const openWhatsApp = (orderId: string) => {
     const itemsList = cart
-      .map((item) => `• ${item.name} × ${item.qty} = ${formatIQD(item.price_iqd * item.qty)}`)
+      .map((item) => `• ${item.name} × ${formatQty(item.qty)} ${item.unit} = ${formatIQD(item.price_iqd * item.qty)}`)
       .join("\n");
     const message = `🛒 *طلب جديد من فريش Fresh*
 ━━━━━━━━━━━━━━
@@ -414,7 +425,7 @@ ${itemsList}
                           <p className="text-sm font-semibold">🔄 آخر طلب:</p>
                           {lastOrder.map((item) => (
                             <div key={item.id} className="flex justify-between text-sm">
-                              <span>{item.name} × {item.qty}</span>
+                              <span>{item.name} × {formatQty(item.qty)} {item.unit}</span>
                               <span className="text-muted-foreground">{formatIQD(item.price_iqd * item.qty)}</span>
                             </div>
                           ))}
@@ -445,11 +456,11 @@ ${itemsList}
                             <p className="text-sm text-muted-foreground">{formatIQD(item.price_iqd)} / {item.unit}</p>
                           </div>
                           <div className="flex items-center gap-1">
-                            <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => updateQty(item.id, -1)}>
+                            <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQty(item.id, item.qty - (item.qty > 1 ? 1 : 0.25))}>
                               <Minus className="h-3 w-3" />
                             </Button>
-                            <span className="w-8 text-center font-semibold">{item.qty}</span>
-                            <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => updateQty(item.id, 1)}>
+                            <span className="min-w-[3rem] text-center font-semibold text-sm">{formatQty(item.qty)} {item.unit}</span>
+                            <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQty(item.id, item.qty + (item.qty >= 1 ? 1 : 0.25))}>
                               <Plus className="h-3 w-3" />
                             </Button>
                           </div>
@@ -557,7 +568,7 @@ ${itemsList}
               <p className="text-sm text-muted-foreground">المنتجات ({totalQty})</p>
               {cart.map((it) => (
                 <div key={it.id} className="flex justify-between text-lg font-medium">
-                  <span>{it.name} × <span className="font-bold">{it.qty}</span></span>
+                  <span>{it.name} × <span className="font-bold">{formatQty(it.qty)} {it.unit}</span></span>
                   <span className="font-bold">{formatIQD(it.price_iqd * it.qty)}</span>
                 </div>
               ))}
@@ -680,18 +691,46 @@ ${itemsList}
                   <span className="text-xs text-muted-foreground">/ {p.unit}</span>
                 </div>
                 {getCartQty(p.id) === 0 ? (
-                  <Button onClick={() => addToCart(p)} className="w-full gap-1" size="sm">
-                    <Plus className="h-4 w-4" /> أضف للسلة
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button onClick={() => addToCart(p, 0.5)} variant="outline" className="flex-1 text-xs h-8" size="sm">
+                      ½ كغ
+                    </Button>
+                    <Button onClick={() => addToCart(p, 1)} className="flex-1 text-xs h-8" size="sm">
+                      1 كغ
+                    </Button>
+                    <Button onClick={() => addToCart(p, 2)} variant="outline" className="flex-1 text-xs h-8" size="sm">
+                      2 كغ
+                    </Button>
+                  </div>
                 ) : (
-                  <div className="flex items-center justify-between gap-1 rounded-md border bg-accent/30 p-1">
-                    <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => updateQty(p.id, -1)}>
-                      <Minus className="h-3 w-3" />
+                  <div className="flex items-center gap-1 rounded-md border bg-accent/30 p-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-destructive shrink-0"
+                      onClick={() => removeItem(p.id)}
+                    >
+                      <Trash2 className="h-3 w-3" />
                     </Button>
-                    <span className="font-bold text-base">{getCartQty(p.id)}</span>
-                    <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => updateQty(p.id, 1)}>
-                      <Plus className="h-3 w-3" />
-                    </Button>
+                    <input
+                      type="number"
+                      step="0.25"
+                      min="0.25"
+                      value={qtyInputs[p.id] ?? formatQty(getCartQty(p.id))}
+                      onChange={(e) => {
+                        setQtyInputs((prev) => ({ ...prev, [p.id]: e.target.value }));
+                        const val = parseFloat(e.target.value);
+                        if (!isNaN(val) && val > 0) setQty(p.id, val);
+                      }}
+                      onBlur={() => setQtyInputs((prev) => {
+                        const { [p.id]: _, ...rest } = prev;
+                        return rest;
+                      })}
+                      className="w-full text-center text-sm font-bold bg-transparent border-none outline-none"
+                    />
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      {p.unit}
+                    </span>
                   </div>
                 )}
               </div>
