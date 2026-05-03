@@ -53,6 +53,10 @@ const Index = () => {
   const [trackPhone, setTrackPhone] = useState("");
   const [trackOrders, setTrackOrders] = useState<any[]>([]);
   const [trackLoading, setTrackLoading] = useState(false);
+  const [qtyInputs, setQtyInputs] = useState<Record<string, string>>({});
+
+  const formatQty = (q: number) =>
+    q % 1 === 0 ? String(q) : q.toFixed(2).replace(/\.?0+$/, "");
 
   const allCategories = useMemo(
     () => ["الكل", ...categories.map((c) => c.name)],
