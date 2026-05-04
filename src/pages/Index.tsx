@@ -456,11 +456,11 @@ ${itemsList}
                             <p className="text-sm text-muted-foreground">{formatIQD(item.price_iqd)} / {item.unit}</p>
                           </div>
                           <div className="flex items-center gap-1">
-                            <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQty(item.id, item.qty - (item.qty > 1 ? 1 : 0.25))}>
+                            <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQty(item.id, item.qty - (item.allow_decimal !== false ? (item.qty > 1 ? 1 : 0.25) : 1))}>
                               <Minus className="h-3 w-3" />
                             </Button>
                             <span className="min-w-[3rem] text-center font-semibold text-sm">{formatQty(item.qty)} {item.unit}</span>
-                            <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQty(item.id, item.qty + (item.qty >= 1 ? 1 : 0.25))}>
+                            <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQty(item.id, item.qty + (item.allow_decimal !== false ? (item.qty >= 1 ? 1 : 0.25) : 1))}>
                               <Plus className="h-3 w-3" />
                             </Button>
                           </div>
