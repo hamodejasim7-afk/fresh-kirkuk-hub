@@ -692,15 +692,31 @@ ${itemsList}
                 </div>
                 {getCartQty(p.id) === 0 ? (
                   <div className="flex gap-1">
-                    <Button onClick={() => addToCart(p, 0.5)} variant="outline" className="flex-1 text-xs h-8" size="sm">
-                      ½ كغ
-                    </Button>
-                    <Button onClick={() => addToCart(p, 1)} className="flex-1 text-xs h-8" size="sm">
-                      1 كغ
-                    </Button>
-                    <Button onClick={() => addToCart(p, 2)} variant="outline" className="flex-1 text-xs h-8" size="sm">
-                      2 كغ
-                    </Button>
+                    {p.allow_decimal !== false ? (
+                      <>
+                        <Button onClick={() => addToCart(p, 0.5)} variant="outline" className="flex-1 text-xs h-8" size="sm">
+                          ½
+                        </Button>
+                        <Button onClick={() => addToCart(p, 1)} className="flex-1 text-xs h-8" size="sm">
+                          1 {p.unit}
+                        </Button>
+                        <Button onClick={() => addToCart(p, 2)} variant="outline" className="flex-1 text-xs h-8" size="sm">
+                          2
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button onClick={() => addToCart(p, 1)} variant="outline" className="flex-1 text-xs h-8" size="sm">
+                          1
+                        </Button>
+                        <Button onClick={() => addToCart(p, 2)} className="flex-1 text-xs h-8" size="sm">
+                          2 {p.unit}
+                        </Button>
+                        <Button onClick={() => addToCart(p, 3)} variant="outline" className="flex-1 text-xs h-8" size="sm">
+                          3
+                        </Button>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <div className="flex items-center gap-1 rounded-md border bg-accent/30 p-1">
@@ -714,12 +730,14 @@ ${itemsList}
                     </Button>
                     <input
                       type="number"
-                      step="0.25"
-                      min="0.25"
+                      step={p.allow_decimal !== false ? "0.25" : "1"}
+                      min={p.allow_decimal !== false ? "0.25" : "1"}
                       value={qtyInputs[p.id] ?? formatQty(getCartQty(p.id))}
                       onChange={(e) => {
                         setQtyInputs((prev) => ({ ...prev, [p.id]: e.target.value }));
-                        const val = parseFloat(e.target.value);
+                        const val = p.allow_decimal !== false
+                          ? parseFloat(e.target.value)
+                          : parseInt(e.target.value);
                         if (!isNaN(val) && val > 0) setQty(p.id, val);
                       }}
                       onBlur={() => setQtyInputs((prev) => {
