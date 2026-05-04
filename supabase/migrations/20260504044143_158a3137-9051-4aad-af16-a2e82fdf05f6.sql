@@ -1,0 +1,1 @@
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS allow_decimal boolean NOT NULL DEFAULT true;

@@ -34,6 +34,7 @@ interface FormState {
   is_available: boolean;
   stock_qty: string;
   sort_order: string;
+  allow_decimal: boolean;
 }
 
 const emptyForm: FormState = {
@@ -46,6 +47,7 @@ const emptyForm: FormState = {
   is_available: true,
   stock_qty: "",
   sort_order: "0",
+  allow_decimal: true,
 };
 
 export const ProductsPanel = () => {
@@ -72,6 +74,7 @@ export const ProductsPanel = () => {
         is_available: editing.is_available,
         stock_qty: editing.stock_qty != null ? String(editing.stock_qty) : "",
         sort_order: String(editing.sort_order),
+        allow_decimal: (editing as any).allow_decimal !== false,
       });
     } else {
       setForm({ ...emptyForm, sort_order: String(products.length + 1) });
@@ -116,6 +119,7 @@ export const ProductsPanel = () => {
       is_available: form.is_available,
       stock_qty: form.stock_qty.trim() === "" ? null : Number(form.stock_qty),
       sort_order: Number(form.sort_order) || 0,
+      allow_decimal: form.allow_decimal,
     };
 
     const { error } = editing
@@ -324,6 +328,17 @@ export const ProductsPanel = () => {
               <Switch
                 checked={form.is_available}
                 onCheckedChange={(v) => setForm({ ...form, is_available: v })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div>
+                <Label>يقبل كميات مجزأة (نصف، ربع...)</Label>
+                <p className="text-xs text-muted-foreground">أوقفه للمنتجات التي تُباع بالقطعة فقط (علبة، حبة، ربطة)</p>
+              </div>
+              <Switch
+                checked={form.allow_decimal}
+                onCheckedChange={(v) => setForm({ ...form, allow_decimal: v })}
               />
             </div>
           </div>

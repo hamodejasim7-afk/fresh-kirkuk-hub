@@ -456,11 +456,11 @@ ${itemsList}
                             <p className="text-sm text-muted-foreground">{formatIQD(item.price_iqd)} / {item.unit}</p>
                           </div>
                           <div className="flex items-center gap-1">
-                            <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQty(item.id, item.qty - (item.qty > 1 ? 1 : 0.25))}>
+                            <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQty(item.id, item.qty - (item.allow_decimal !== false ? (item.qty > 1 ? 1 : 0.25) : 1))}>
                               <Minus className="h-3 w-3" />
                             </Button>
                             <span className="min-w-[3rem] text-center font-semibold text-sm">{formatQty(item.qty)} {item.unit}</span>
-                            <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQty(item.id, item.qty + (item.qty >= 1 ? 1 : 0.25))}>
+                            <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQty(item.id, item.qty + (item.allow_decimal !== false ? (item.qty >= 1 ? 1 : 0.25) : 1))}>
                               <Plus className="h-3 w-3" />
                             </Button>
                           </div>
@@ -692,15 +692,31 @@ ${itemsList}
                 </div>
                 {getCartQty(p.id) === 0 ? (
                   <div className="flex gap-1">
-                    <Button onClick={() => addToCart(p, 0.5)} variant="outline" className="flex-1 text-xs h-8" size="sm">
-                      ½ كغ
-                    </Button>
-                    <Button onClick={() => addToCart(p, 1)} className="flex-1 text-xs h-8" size="sm">
-                      1 كغ
-                    </Button>
-                    <Button onClick={() => addToCart(p, 2)} variant="outline" className="flex-1 text-xs h-8" size="sm">
-                      2 كغ
-                    </Button>
+                    {p.allow_decimal !== false ? (
+                      <>
+                        <Button onClick={() => addToCart(p, 0.5)} variant="outline" className="flex-1 text-xs h-8" size="sm">
+                          ½
+                        </Button>
+                        <Button onClick={() => addToCart(p, 1)} className="flex-1 text-xs h-8" size="sm">
+                          1 {p.unit}
+                        </Button>
+                        <Button onClick={() => addToCart(p, 2)} variant="outline" className="flex-1 text-xs h-8" size="sm">
+                          2
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button onClick={() => addToCart(p, 1)} variant="outline" className="flex-1 text-xs h-8" size="sm">
+                          1
+                        </Button>
+                        <Button onClick={() => addToCart(p, 2)} className="flex-1 text-xs h-8" size="sm">
+                          2 {p.unit}
+                        </Button>
+                        <Button onClick={() => addToCart(p, 3)} variant="outline" className="flex-1 text-xs h-8" size="sm">
+                          3
+                        </Button>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <div className="flex items-center gap-1 rounded-md border bg-accent/30 p-1">
@@ -714,12 +730,14 @@ ${itemsList}
                     </Button>
                     <input
                       type="number"
-                      step="0.25"
-                      min="0.25"
+                      step={p.allow_decimal !== false ? "0.25" : "1"}
+                      min={p.allow_decimal !== false ? "0.25" : "1"}
                       value={qtyInputs[p.id] ?? formatQty(getCartQty(p.id))}
                       onChange={(e) => {
                         setQtyInputs((prev) => ({ ...prev, [p.id]: e.target.value }));
-                        const val = parseFloat(e.target.value);
+                        const val = p.allow_decimal !== false
+                          ? parseFloat(e.target.value)
+                          : parseInt(e.target.value);
                         if (!isNaN(val) && val > 0) setQty(p.id, val);
                       }}
                       onBlur={() => setQtyInputs((prev) => {
