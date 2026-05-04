@@ -34,6 +34,7 @@ interface FormState {
   is_available: boolean;
   stock_qty: string;
   sort_order: string;
+  allow_decimal: boolean;
 }
 
 const emptyForm: FormState = {
