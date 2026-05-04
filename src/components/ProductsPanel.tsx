@@ -47,6 +47,7 @@ const emptyForm: FormState = {
   is_available: true,
   stock_qty: "",
   sort_order: "0",
+  allow_decimal: true,
 };
 
 export const ProductsPanel = () => {
