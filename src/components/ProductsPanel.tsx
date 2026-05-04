@@ -74,6 +74,7 @@ export const ProductsPanel = () => {
         is_available: editing.is_available,
         stock_qty: editing.stock_qty != null ? String(editing.stock_qty) : "",
         sort_order: String(editing.sort_order),
+        allow_decimal: (editing as any).allow_decimal !== false,
       });
     } else {
       setForm({ ...emptyForm, sort_order: String(products.length + 1) });
