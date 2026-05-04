@@ -330,6 +330,17 @@ export const ProductsPanel = () => {
                 onCheckedChange={(v) => setForm({ ...form, is_available: v })}
               />
             </div>
+
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div>
+                <Label>يقبل كميات مجزأة (نصف، ربع...)</Label>
+                <p className="text-xs text-muted-foreground">أوقفه للمنتجات التي تُباع بالقطعة فقط (علبة، حبة، ربطة)</p>
+              </div>
+              <Switch
+                checked={form.allow_decimal}
+                onCheckedChange={(v) => setForm({ ...form, allow_decimal: v })}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>إلغاء</Button>
