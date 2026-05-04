@@ -129,6 +129,7 @@ export type Database = {
       }
       products: {
         Row: {
+          allow_decimal: boolean
           category: string
           created_at: string
           emoji: string | null
@@ -144,6 +145,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allow_decimal?: boolean
           category: string
           created_at?: string
           emoji?: string | null
@@ -159,6 +161,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allow_decimal?: boolean
           category?: string
           created_at?: string
           emoji?: string | null
