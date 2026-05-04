@@ -119,6 +119,7 @@ export const ProductsPanel = () => {
       is_available: form.is_available,
       stock_qty: form.stock_qty.trim() === "" ? null : Number(form.stock_qty),
       sort_order: Number(form.sort_order) || 0,
+      allow_decimal: form.allow_decimal,
     };
 
     const { error } = editing
