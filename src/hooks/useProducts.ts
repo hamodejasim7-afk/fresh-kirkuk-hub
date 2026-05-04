@@ -12,6 +12,7 @@ export interface DBProduct {
   is_available: boolean;
   stock_qty: number | null;
   sort_order: number;
+  allow_decimal?: boolean;
 }
 
 export function useProducts(opts: { onlyAvailable?: boolean } = {}) {
