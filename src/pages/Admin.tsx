@@ -510,14 +510,35 @@ const Admin = () => {
     } catch (e) {
       console.error(e);
     }
+
+    // Try to archive all non-archived orders
+    const { data: ordersToArchive, error: fetchError } = await supabase
+      .from("orders")
+      .select("id")
+      .is("archived_at", null);
+
+    if (fetchError) {
+      toast.error("فشل جلب الطلبات: " + fetchError.message);
+      return;
+    }
+
+    if (!ordersToArchive || ordersToArchive.length === 0) {
+      toast.info("لا توجد طلبات لأرشفتها");
+      return;
+    }
+
+    const ids = ordersToArchive.map((o) => o.id);
+
     const { error } = await supabase
       .from("orders")
       .update({ archived_at: new Date().toISOString() })
-      .is("archived_at", null);
+      .in("id", ids);
+
     if (error) {
       toast.error("فشل التصفير: " + error.message);
+      console.error("Archive error:", error);
     } else {
-      toast.success("تم تصفير المبيعات وأرشفة الطلبات (مع نسخة احتياطية Excel)");
+      toast.success(`تم أرشفة ${ids.length} طلب بنجاح ✓`);
       loadData();
       loadArchive();
     }
