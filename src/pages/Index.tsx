@@ -543,48 +543,48 @@ ${itemsList}
       </header>
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent dir="rtl" className="sm:max-w-lg">
+        <DialogContent dir="rtl" className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader className="text-right sm:text-right">
-            <DialogTitle className="text-2xl">تأكيد بيانات الطلب</DialogTitle>
+            <DialogTitle className="text-xl">تأكيد بيانات الطلب</DialogTitle>
             <DialogDescription className="text-base">
               راجع هذه المعلومات بعناية قبل الإرسال النهائي.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 rounded-md border bg-accent/40 p-4 text-lg">
+          <div className="space-y-3 rounded-md border bg-accent/40 p-3 text-lg">
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">الاسم</p>
-              <p className="text-xl font-semibold text-foreground">{customer.name.trim()}</p>
+              <p className="text-base font-semibold text-foreground">{customer.name.trim()}</p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">الهاتف</p>
-              <p className="text-xl font-semibold text-foreground" dir="ltr">{customer.phone.trim()}</p>
+              <p className="text-base font-semibold text-foreground" dir="ltr">{customer.phone.trim()}</p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">العنوان</p>
-              <p className="text-lg font-semibold text-foreground">{customer.address.trim()}</p>
+              <p className="text-base font-semibold text-foreground">{customer.address.trim()}</p>
             </div>
             <div className="border-t pt-3 space-y-2">
               <p className="text-sm text-muted-foreground">المنتجات ({totalQty})</p>
               {cart.map((it) => (
-                <div key={it.id} className="flex justify-between text-lg font-medium">
+                <div key={it.id} className="flex justify-between text-sm font-medium">
                   <span>{it.name} × <span className="font-bold">{formatQty(it.qty)} {it.unit}</span></span>
                   <span className="font-bold">{formatIQD(it.price_iqd * it.qty)}</span>
                 </div>
               ))}
             </div>
-            <div className="border-t pt-3 space-y-2 text-lg">
+            <div className="border-t pt-3 space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-muted-foreground">المجموع الفرعي</span><span className="font-semibold">{formatIQD(subtotal)}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">🚚 رسوم التوصيل</span><span className="font-semibold">{formatIQD(deliveryFee)}</span></div>
-              <div className="flex justify-between font-bold text-primary text-2xl border-t pt-2"><span>المجموع الكلي</span><span>{formatIQD(totalPrice)}</span></div>
+              <div className="flex justify-between font-bold text-primary text-lg border-t pt-2"><span>المجموع الكلي</span><span>{formatIQD(totalPrice)}</span></div>
             </div>
           </div>
 
           <DialogFooter className="gap-2 sm:flex-row-reverse sm:justify-start sm:space-x-0">
-            <Button type="button" size="lg" className="text-base" onClick={submitOrder} disabled={submitting}>
+            <Button type="button" size="default" className="text-sm" onClick={submitOrder} disabled={submitting}>
               {submitting ? "جاري الإرسال..." : "تأكيد وإرسال"}
             </Button>
-            <Button type="button" size="lg" className="text-base" variant="outline" onClick={() => setConfirmOpen(false)} disabled={submitting}>
+            <Button type="button" size="default" className="text-sm" variant="outline" onClick={() => setConfirmOpen(false)} disabled={submitting}>
               تعديل البيانات
             </Button>
           </DialogFooter>
