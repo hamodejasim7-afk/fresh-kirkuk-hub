@@ -503,6 +503,8 @@ const Admin = () => {
   };
 
   const resetSales = async () => {
+    console.log("resetSales called");
+    toast.info("جاري التصفير...");
     // Backup XLSX first (auto)
     const today = new Date().toISOString().slice(0, 10);
     try {
