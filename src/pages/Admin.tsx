@@ -1024,7 +1024,7 @@ const PurgeArchiveButton = ({ count, onConfirm }: { count: number; onConfirm: ()
         disabled={count === 0}
         onClick={() => setStep("first")}
       >
-        <Trash2 className="h-3.5 w-3.5" />تصفير الأرشيف بالكامل
+        <Archive className="h-4 w-4" />تصفير الأرشيف بالكامل
       </Button>
 
       <AlertDialog open={step === "first"} onOpenChange={(o) => !o && reset()}>
