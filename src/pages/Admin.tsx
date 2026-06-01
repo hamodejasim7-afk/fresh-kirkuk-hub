@@ -925,6 +925,14 @@ const Admin = () => {
 
           <TabsContent value="archive" className="mt-4">
             <Card className="p-4">
+              {isAdmin && archivedOrders.length > 0 && (
+                <div className="mb-3 flex justify-end">
+                  <PurgeArchiveButton
+                    count={archivedOrders.length}
+                    onConfirm={purgeArchive}
+                  />
+                </div>
+              )}
               <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                 <div>
                   <h3 className="font-semibold flex items-center gap-2">
@@ -941,12 +949,6 @@ const Admin = () => {
                   >
                     <FileSpreadsheet className="h-3.5 w-3.5" />تصدير Excel
                   </Button>
-                  {isAdmin && (
-                    <PurgeArchiveButton
-                      count={archivedOrders.length}
-                      onConfirm={purgeArchive}
-                    />
-                  )}
                 </div>
               </div>
               {archivedOrders.length === 0 ? (
