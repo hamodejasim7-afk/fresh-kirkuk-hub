@@ -921,6 +921,10 @@ const Admin = () => {
             <PricingPanel />
           </TabsContent>
 
+          <TabsContent value="delivery-zones" className="mt-4">
+            <DeliveryZonesPanel />
+          </TabsContent>
+
           <TabsContent value="products" className="mt-4">
             <ProductsPanel />
           </TabsContent>
