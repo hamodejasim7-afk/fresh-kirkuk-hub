@@ -56,6 +56,9 @@ const Index = () => {
   const [trackOrders, setTrackOrders] = useState<any[]>([]);
   const [trackLoading, setTrackLoading] = useState(false);
   const [qtyInputs, setQtyInputs] = useState<Record<string, string>>({});
+  const [selectedZoneId, setSelectedZoneId] = useState<string>("");
+  const { zones: deliveryZones } = useDeliveryZones({ onlyActive: true });
+  const selectedZone = deliveryZones.find((z) => z.id === selectedZoneId) ?? null;
 
   const formatQty = (q: number) =>
     q % 1 === 0 ? String(q) : q.toFixed(2).replace(/\.?0+$/, "");
