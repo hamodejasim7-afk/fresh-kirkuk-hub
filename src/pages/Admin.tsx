@@ -56,6 +56,8 @@ interface Order {
   archived_at: string | null;
   created_at: string;
   updated_at: string;
+  delivery_zone_id: string | null;
+  delivery_zone_name: string | null;
 }
 
 interface OrderItem {
