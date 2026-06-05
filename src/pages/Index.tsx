@@ -153,7 +153,7 @@ const Index = () => {
 
   const totalQty = cart.reduce((s, i) => s + i.qty, 0);
   const subtotal = cart.reduce((s, i) => s + i.qty * i.price_iqd, 0);
-  const deliveryFee = cart.length > 0 ? DELIVERY_FEE_IQD : 0;
+  const deliveryFee = cart.length > 0 ? (selectedZone ? selectedZone.price_iqd : DELIVERY_FEE_IQD) : 0;
   const totalPrice = subtotal + deliveryFee;
 
   const cartMap = useMemo(
