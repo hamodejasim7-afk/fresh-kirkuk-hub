@@ -606,7 +606,7 @@ ${itemsList}
             </div>
             <div className="border-t pt-3 space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-muted-foreground">المجموع الفرعي</span><span className="font-semibold">{formatIQD(subtotal)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">🚚 رسوم التوصيل</span><span className="font-semibold">{formatIQD(deliveryFee)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">🚚 رسوم التوصيل{selectedZone ? ` (${selectedZone.name})` : ""}</span><span className="font-semibold">{formatIQD(deliveryFee)}</span></div>
               <div className="flex justify-between font-bold text-primary text-lg border-t pt-2"><span>المجموع الكلي</span><span>{formatIQD(totalPrice)}</span></div>
             </div>
           </div>
