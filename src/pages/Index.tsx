@@ -225,7 +225,7 @@ ${customer.notes ? `📝 ملاحظات: ${customer.notes}` : ""}
 ━━━━━━━━━━━━━━
 ${itemsList}
 ━━━━━━━━━━━━━━
-🛵 رسوم التوصيل: ${formatIQD(DELIVERY_FEE_IQD)}
+🛵 رسوم التوصيل${selectedZone ? ` (${selectedZone.name})` : ""}: ${formatIQD(deliveryFee)}
 💰 *المجموع الكلي: ${formatIQD(totalPrice)}*
 ━━━━━━━━━━━━━━
 🔖 رقم الطلب: ${orderId.slice(0, 8).toUpperCase()}`;
