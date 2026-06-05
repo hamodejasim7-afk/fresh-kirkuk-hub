@@ -27,6 +27,8 @@ import { useProducts, type DBProduct } from "@/hooks/useProducts";
 import { orderCustomerSchema } from "@/lib/orderValidation";
 import { useCategories } from "@/hooks/useCategories";
 import { DELIVERY_FEE_IQD, STORE_PHONE, STORE_PHONE_TEL, STORE_LOCATION } from "@/lib/constants";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useDeliveryZones } from "@/hooks/useDeliveryZones";
 
 type CartItem = DBProduct & { qty: number };
 
@@ -54,6 +56,9 @@ const Index = () => {
   const [trackOrders, setTrackOrders] = useState<any[]>([]);
   const [trackLoading, setTrackLoading] = useState(false);
   const [qtyInputs, setQtyInputs] = useState<Record<string, string>>({});
+  const [selectedZoneId, setSelectedZoneId] = useState<string>("");
+  const { zones: deliveryZones } = useDeliveryZones({ onlyActive: true });
+  const selectedZone = deliveryZones.find((z) => z.id === selectedZoneId) ?? null;
 
   const formatQty = (q: number) =>
     q % 1 === 0 ? String(q) : q.toFixed(2).replace(/\.?0+$/, "");
@@ -148,7 +153,7 @@ const Index = () => {
 
   const totalQty = cart.reduce((s, i) => s + i.qty, 0);
   const subtotal = cart.reduce((s, i) => s + i.qty * i.price_iqd, 0);
-  const deliveryFee = cart.length > 0 ? DELIVERY_FEE_IQD : 0;
+  const deliveryFee = cart.length > 0 ? (selectedZone ? selectedZone.price_iqd : DELIVERY_FEE_IQD) : 0;
   const totalPrice = subtotal + deliveryFee;
 
   const cartMap = useMemo(
@@ -220,7 +225,7 @@ ${customer.notes ? `📝 ملاحظات: ${customer.notes}` : ""}
 ━━━━━━━━━━━━━━
 ${itemsList}
 ━━━━━━━━━━━━━━
-🛵 رسوم التوصيل: ${formatIQD(DELIVERY_FEE_IQD)}
+🛵 رسوم التوصيل${selectedZone ? ` (${selectedZone.name})` : ""}: ${formatIQD(deliveryFee)}
 💰 *المجموع الكلي: ${formatIQD(totalPrice)}*
 ━━━━━━━━━━━━━━
 🔖 رقم الطلب: ${orderId.slice(0, 8).toUpperCase()}`;
@@ -263,8 +268,10 @@ ${itemsList}
           notes: validatedCustomer.notes || null,
           total_iqd: totalPrice,
           delivery_fee_iqd: deliveryFee,
+          delivery_zone_id: selectedZone?.id ?? null,
+          delivery_zone_name: selectedZone?.name ?? null,
           status: "new",
-        });
+        } as any);
 
       if (orderErr) throw orderErr;
 
@@ -498,6 +505,30 @@ ${itemsList}
                           <Textarea id="address" value={customer.address} onChange={(e) => setCustomer({ ...customer, address: e.target.value })} placeholder="الحي، الشارع، أقرب نقطة دالة" rows={2} />
                         </div>
                         <div className="space-y-2">
+                          <Label htmlFor="zone" className="flex items-center gap-1"><Truck className="h-4 w-4" /> منطقة التوصيل</Label>
+                          <Select value={selectedZoneId} onValueChange={setSelectedZoneId}>
+                            <SelectTrigger id="zone">
+                              <SelectValue placeholder={`اختر منطقتك (الافتراضي ${formatIQD(DELIVERY_FEE_IQD)})`} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {deliveryZones.map((z) => (
+                                <SelectItem key={z.id} value={z.id}>
+                                  {z.name} — {formatIQD(z.price_iqd)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {selectedZone ? (
+                            <p className="text-xs text-muted-foreground">
+                              سعر التوصيل: <span className="font-semibold text-foreground">{formatIQD(selectedZone.price_iqd)}</span>
+                            </p>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">
+                              إذا لم تكن منطقتك مدرجة، سيتم استخدام السعر الافتراضي {formatIQD(DELIVERY_FEE_IQD)}.
+                            </p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
                           <Label htmlFor="notes">ملاحظات (اختياري)</Label>
                           <Textarea id="notes" value={customer.notes} onChange={(e) => setCustomer({ ...customer, notes: e.target.value })} rows={2} />
                         </div>
@@ -575,7 +606,7 @@ ${itemsList}
             </div>
             <div className="border-t pt-3 space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-muted-foreground">المجموع الفرعي</span><span className="font-semibold">{formatIQD(subtotal)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">🚚 رسوم التوصيل</span><span className="font-semibold">{formatIQD(deliveryFee)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">🚚 رسوم التوصيل{selectedZone ? ` (${selectedZone.name})` : ""}</span><span className="font-semibold">{formatIQD(deliveryFee)}</span></div>
               <div className="flex justify-between font-bold text-primary text-lg border-t pt-2"><span>المجموع الكلي</span><span>{formatIQD(totalPrice)}</span></div>
             </div>
           </div>

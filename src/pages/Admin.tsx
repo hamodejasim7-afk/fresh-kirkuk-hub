@@ -36,6 +36,7 @@ import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { ProductsPanel } from "@/components/ProductsPanel";
 import { CategoriesPanel } from "@/components/CategoriesPanel";
 import { PricingPanel } from "@/components/PricingPanel";
+import { DeliveryZonesPanel } from "@/components/DeliveryZonesPanel";
 import { STORE_PHONE, STORE_PHONE_TEL, STORE_LOCATION } from "@/lib/constants";
 import { exportOrdersToExcel } from "@/lib/exportExcel";
 import { ensureNotificationPermission, showOrderNotification } from "@/lib/notifications";
@@ -56,6 +57,8 @@ interface Order {
   archived_at: string | null;
   created_at: string;
   updated_at: string;
+  delivery_zone_id: string | null;
+  delivery_zone_name: string | null;
 }
 
 interface OrderItem {
@@ -782,6 +785,9 @@ const Admin = () => {
             {(isAdmin || perms.manage_pricing) && (
               <TabsTrigger value="pricing">التسعير</TabsTrigger>
             )}
+            {(isAdmin || perms.manage_pricing) && (
+              <TabsTrigger value="delivery-zones">أسعار التوصيل</TabsTrigger>
+            )}
             {(isAdmin || perms.manage_products) && (
               <TabsTrigger value="products">المنتجات</TabsTrigger>
             )}
@@ -852,7 +858,7 @@ const Admin = () => {
                                   ))}
                                   {o.delivery_fee_iqd > 0 && (
                                     <div className="flex justify-between text-sm pt-1">
-                                      <span>🚚 رسوم التوصيل</span>
+                                      <span>🚚 رسوم التوصيل{o.delivery_zone_name ? ` (${o.delivery_zone_name})` : ""}</span>
                                       <span className="font-semibold">{formatIQD(o.delivery_fee_iqd)}</span>
                                     </div>
                                   )}
@@ -913,6 +919,10 @@ const Admin = () => {
 
           <TabsContent value="pricing" className="mt-4">
             <PricingPanel />
+          </TabsContent>
+
+          <TabsContent value="delivery-zones" className="mt-4">
+            <DeliveryZonesPanel />
           </TabsContent>
 
           <TabsContent value="products" className="mt-4">
