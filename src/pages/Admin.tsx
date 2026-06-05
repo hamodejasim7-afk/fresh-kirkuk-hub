@@ -785,6 +785,9 @@ const Admin = () => {
             {(isAdmin || perms.manage_pricing) && (
               <TabsTrigger value="pricing">التسعير</TabsTrigger>
             )}
+            {(isAdmin || perms.manage_pricing) && (
+              <TabsTrigger value="delivery-zones">أسعار التوصيل</TabsTrigger>
+            )}
             {(isAdmin || perms.manage_products) && (
               <TabsTrigger value="products">المنتجات</TabsTrigger>
             )}
