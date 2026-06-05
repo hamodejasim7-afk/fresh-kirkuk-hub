@@ -36,6 +36,7 @@ import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { ProductsPanel } from "@/components/ProductsPanel";
 import { CategoriesPanel } from "@/components/CategoriesPanel";
 import { PricingPanel } from "@/components/PricingPanel";
+import { DeliveryZonesPanel } from "@/components/DeliveryZonesPanel";
 import { STORE_PHONE, STORE_PHONE_TEL, STORE_LOCATION } from "@/lib/constants";
 import { exportOrdersToExcel } from "@/lib/exportExcel";
 import { ensureNotificationPermission, showOrderNotification } from "@/lib/notifications";
