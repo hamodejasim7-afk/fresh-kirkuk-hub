@@ -505,6 +505,30 @@ ${itemsList}
                           <Textarea id="address" value={customer.address} onChange={(e) => setCustomer({ ...customer, address: e.target.value })} placeholder="الحي، الشارع، أقرب نقطة دالة" rows={2} />
                         </div>
                         <div className="space-y-2">
+                          <Label htmlFor="zone" className="flex items-center gap-1"><Truck className="h-4 w-4" /> منطقة التوصيل</Label>
+                          <Select value={selectedZoneId} onValueChange={setSelectedZoneId}>
+                            <SelectTrigger id="zone">
+                              <SelectValue placeholder={`اختر منطقتك (الافتراضي ${formatIQD(DELIVERY_FEE_IQD)})`} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {deliveryZones.map((z) => (
+                                <SelectItem key={z.id} value={z.id}>
+                                  {z.name} — {formatIQD(z.price_iqd)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {selectedZone ? (
+                            <p className="text-xs text-muted-foreground">
+                              سعر التوصيل: <span className="font-semibold text-foreground">{formatIQD(selectedZone.price_iqd)}</span>
+                            </p>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">
+                              إذا لم تكن منطقتك مدرجة، سيتم استخدام السعر الافتراضي {formatIQD(DELIVERY_FEE_IQD)}.
+                            </p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
                           <Label htmlFor="notes">ملاحظات (اختياري)</Label>
                           <Textarea id="notes" value={customer.notes} onChange={(e) => setCustomer({ ...customer, notes: e.target.value })} rows={2} />
                         </div>
