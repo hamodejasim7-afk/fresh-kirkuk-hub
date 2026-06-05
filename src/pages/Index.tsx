@@ -268,8 +268,10 @@ ${itemsList}
           notes: validatedCustomer.notes || null,
           total_iqd: totalPrice,
           delivery_fee_iqd: deliveryFee,
+          delivery_zone_id: selectedZone?.id ?? null,
+          delivery_zone_name: selectedZone?.name ?? null,
           status: "new",
-        });
+        } as any);
 
       if (orderErr) throw orderErr;
 
