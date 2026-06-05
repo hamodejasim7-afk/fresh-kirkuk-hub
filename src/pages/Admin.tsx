@@ -858,7 +858,7 @@ const Admin = () => {
                                   ))}
                                   {o.delivery_fee_iqd > 0 && (
                                     <div className="flex justify-between text-sm pt-1">
-                                      <span>🚚 رسوم التوصيل</span>
+                                      <span>🚚 رسوم التوصيل{o.delivery_zone_name ? ` (${o.delivery_zone_name})` : ""}</span>
                                       <span className="font-semibold">{formatIQD(o.delivery_fee_iqd)}</span>
                                     </div>
                                   )}
