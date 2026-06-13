@@ -31,14 +31,20 @@ export function useProducts(opts: { onlyAvailable?: boolean } = {}) {
 
   useEffect(() => {
     load();
+
     const channel = supabase
-      .channel("products-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => load())
+      .channel("realtime:products-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "products" },
+        () => load()
+      )
       .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [load]);
+  }, []);
 
   return { products, loading, reload: load };
 }
