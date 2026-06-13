@@ -33,7 +33,7 @@ export function useProducts(opts: { onlyAvailable?: boolean } = {}) {
     load();
 
     const channel = supabase
-      .channel("realtime:products-changes")
+      .channel("products-changes")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "products" },
