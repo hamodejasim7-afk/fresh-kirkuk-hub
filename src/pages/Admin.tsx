@@ -34,6 +34,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { ProductsPanel } from "@/components/ProductsPanel";
+import { BulkPriceUpdate } from "@/components/BulkPriceUpdate";
 import { CategoriesPanel } from "@/components/CategoriesPanel";
 import { PricingPanel } from "@/components/PricingPanel";
 import { DeliveryZonesPanel } from "@/components/DeliveryZonesPanel";
