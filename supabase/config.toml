@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.delete-staff]
 verify_jwt = false
+
+[functions.parse-price-image]
+verify_jwt = false
