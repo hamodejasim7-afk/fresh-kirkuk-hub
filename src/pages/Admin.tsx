@@ -925,7 +925,8 @@ const Admin = () => {
             <DeliveryZonesPanel />
           </TabsContent>
 
-          <TabsContent value="products" className="mt-4">
+          <TabsContent value="products" className="mt-4 space-y-4">
+            <BulkPriceUpdate />
             <ProductsPanel />
           </TabsContent>
 
