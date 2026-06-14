@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Loader2, ImageIcon, FileSpreadsheet } from "lucide-react";
+import { Loader2, ImageIcon, FileSpreadsheet, Download } from "lucide-react";
 import { toast } from "sonner";
 import { formatIQD } from "@/lib/format";
 
@@ -140,6 +140,30 @@ export const BulkPriceUpdate = () => {
     }
   };
 
+  const downloadTemplate = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("name, price_iqd, unit")
+        .order("category", { ascending: true });
+      if (error) throw error;
+
+      const rows = (data ?? []).map((p) => ({
+        "اسم المنتج": p.name,
+        "السعر": p.price_iqd,
+        "الوحدة": p.unit,
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(rows);
+      ws["!cols"] = [{ wch: 20 }, { wch: 10 }, { wch: 10 }];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "الأسعار");
+      XLSX.writeFile(wb, "نموذج-الأسعار.xlsx");
+    } catch (e: any) {
+      toast.error("تعذّر تحميل النموذج: " + (e?.message ?? e));
+    }
+  };
+
   return (
     <Card className="p-4 space-y-4">
       <div>
@@ -182,6 +206,16 @@ export const BulkPriceUpdate = () => {
         >
           <FileSpreadsheet className="h-4 w-4" />
           📊 رفع ملف Excel أو CSV
+        </Button>
+
+        <Button
+          variant="outline"
+          disabled={processing}
+          onClick={downloadTemplate}
+          className="gap-2 sm:col-span-2"
+        >
+          <Download className="h-4 w-4" />
+          📥 تحميل نموذج Excel بالمنتجات الحالية
         </Button>
       </div>
 
