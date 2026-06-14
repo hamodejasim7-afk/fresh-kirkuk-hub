@@ -207,6 +207,16 @@ export const BulkPriceUpdate = () => {
           <FileSpreadsheet className="h-4 w-4" />
           📊 رفع ملف Excel أو CSV
         </Button>
+
+        <Button
+          variant="outline"
+          disabled={processing}
+          onClick={downloadTemplate}
+          className="gap-2 sm:col-span-2"
+        >
+          <Download className="h-4 w-4" />
+          📥 تحميل نموذج Excel بالمنتجات الحالية
+        </Button>
       </div>
 
       {processing && (
