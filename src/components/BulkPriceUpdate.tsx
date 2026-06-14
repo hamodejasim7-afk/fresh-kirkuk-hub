@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Loader2, ImageIcon, FileSpreadsheet } from "lucide-react";
+import { Loader2, ImageIcon, FileSpreadsheet, Download } from "lucide-react";
 import { toast } from "sonner";
 import { formatIQD } from "@/lib/format";
 
