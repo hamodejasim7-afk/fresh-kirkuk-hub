@@ -140,6 +140,30 @@ export const BulkPriceUpdate = () => {
     }
   };
 
+  const downloadTemplate = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("name, price_iqd, unit")
+        .order("category", { ascending: true });
+      if (error) throw error;
+
+      const rows = (data ?? []).map((p) => ({
+        "اسم المنتج": p.name,
+        "السعر": p.price_iqd,
+        "الوحدة": p.unit,
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(rows);
+      ws["!cols"] = [{ wch: 20 }, { wch: 10 }, { wch: 10 }];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "الأسعار");
+      XLSX.writeFile(wb, "نموذج-الأسعار.xlsx");
+    } catch (e: any) {
+      toast.error("تعذّر تحميل النموذج: " + (e?.message ?? e));
+    }
+  };
+
   return (
     <Card className="p-4 space-y-4">
       <div>
