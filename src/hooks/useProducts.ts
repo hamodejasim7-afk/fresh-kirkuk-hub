@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface DBProduct {
@@ -19,6 +19,7 @@ export function useProducts(opts: { onlyAvailable?: boolean } = {}) {
   const { onlyAvailable = false } = opts;
   const [products, setProducts] = useState<DBProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const channelRef = useRef<any>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -32,8 +33,12 @@ export function useProducts(opts: { onlyAvailable?: boolean } = {}) {
   useEffect(() => {
     load();
 
-    const channel = supabase
-      .channel("products-changes")
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
+
+    channelRef.current = supabase
+      .channel(`products-changes-${Math.random()}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "products" },
@@ -42,7 +47,10 @@ export function useProducts(opts: { onlyAvailable?: boolean } = {}) {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, []);
 
