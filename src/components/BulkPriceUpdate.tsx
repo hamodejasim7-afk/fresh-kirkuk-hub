@@ -38,7 +38,7 @@ export const BulkPriceUpdate = () => {
   const applyItems = async (items: ParsedItem[]) => {
     const valid = items
       .map((i) => ({ name: String(i.name ?? "").trim(), price: Number(i.price) }))
-      .filter((i) => i.name && Number.isFinite(i.price) && i.price >= 0);
+      .filter((i) => i.name && Number.isFinite(i.price));
 
     if (valid.length === 0) {
       toast.warning("لم يتم العثور على منتجات مطابقة");
@@ -48,20 +48,28 @@ export const BulkPriceUpdate = () => {
     const byNorm = new Map(valid.map((i) => [normalize(i.name), i]));
     const updated: UpdateRow[] = [];
     const matchedIds = new Set<string>();
+    const hidden: string[] = [];
 
     for (const p of products) {
       const match = byNorm.get(normalize(p.name));
       if (match) {
         matchedIds.add(p.id);
         const newPrice = Math.round(match.price);
-        if (newPrice !== p.price_iqd) {
-          const { error } = await supabase
-            .from("products")
-            .update({ price_iqd: newPrice, is_available: true })
-            .eq("id", p.id);
-          if (!error) updated.push({ name: p.name, oldPrice: p.price_iqd, newPrice });
-        } else if (!p.is_available) {
-          await supabase.from("products").update({ is_available: true }).eq("id", p.id);
+        if (newPrice === 0) {
+          if (p.is_available) {
+            await supabase.from("products").update({ is_available: false }).eq("id", p.id);
+            hidden.push(p.name);
+          }
+        } else {
+          if (newPrice !== p.price_iqd) {
+            const { error } = await supabase
+              .from("products")
+              .update({ price_iqd: newPrice, is_available: true })
+              .eq("id", p.id);
+            if (!error) updated.push({ name: p.name, oldPrice: p.price_iqd, newPrice });
+          } else if (!p.is_available) {
+            await supabase.from("products").update({ is_available: true }).eq("id", p.id);
+          }
         }
       }
     }
@@ -77,7 +85,7 @@ export const BulkPriceUpdate = () => {
       toast.success(`تم تحديث ${updated.length} منتج`);
     }
 
-    setSummary({ updated, disabled: toDisable.map((p) => p.name) });
+    setSummary({ updated, disabled: [...toDisable.map((p) => p.name), ...hidden] });
     reload();
   };
 
