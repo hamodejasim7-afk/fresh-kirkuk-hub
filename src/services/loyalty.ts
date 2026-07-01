@@ -63,7 +63,7 @@ export async function createCustomer(input: {
 }
 
 export async function updateCustomer(id: string, patch: Partial<Pick<Customer, "full_name" | "phone" | "area">>) {
-  const clean: Record<string, unknown> = {};
+  const clean: { full_name?: string; phone?: string; area?: string | null } = {};
   if (patch.full_name !== undefined) clean.full_name = patch.full_name.trim();
   if (patch.phone !== undefined) clean.phone = normalizePhone(patch.phone);
   if (patch.area !== undefined) clean.area = patch.area?.trim() || null;
