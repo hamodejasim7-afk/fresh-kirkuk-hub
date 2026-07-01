@@ -60,6 +60,9 @@ interface Order {
   updated_at: string;
   delivery_zone_id: string | null;
   delivery_zone_name: string | null;
+  customer_id?: string | null;
+  stamp_added?: boolean;
+  created_by?: string | null;
 }
 
 interface OrderItem {
