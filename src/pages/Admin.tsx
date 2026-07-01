@@ -26,7 +26,7 @@ import { formatIQD } from "@/lib/format";
 import { toast } from "sonner";
 import {
   Printer, RotateCcw, Calendar, TrendingUp, Users, Package, LogOut, ArrowRight, UserPlus,
-  MessageCircle, Settings, Bell, BellOff, Store, PowerOff, Download, Archive, Undo2, Trash2, FileSpreadsheet,
+  MessageCircle, Settings, Bell, BellOff, Store, PowerOff, Download, Archive, Undo2, Trash2, FileSpreadsheet, Gift,
 } from "lucide-react";
 import freshLogo from "@/assets/fresh-logo.png";
 import { buildOrderWhatsAppText, buildWhatsAppLink } from "@/lib/whatsapp";
@@ -44,6 +44,7 @@ import { ensureNotificationPermission, showOrderNotification } from "@/lib/notif
 import { formatIQD as fmt } from "@/lib/format";
 import { useStaffPermissions } from "@/hooks/useStaffPermissions";
 import { PermissionsDialog } from "@/components/PermissionsDialog";
+import { LoyaltyPanel } from "@/components/loyalty/LoyaltyPanel";
 
 interface Order {
   id: string;
@@ -60,6 +61,9 @@ interface Order {
   updated_at: string;
   delivery_zone_id: string | null;
   delivery_zone_name: string | null;
+  customer_id: string | null;
+  stamp_added: boolean;
+  created_by: string | null;
 }
 
 interface OrderItem {
@@ -804,6 +808,7 @@ const Admin = () => {
             {(isAdmin || perms.manage_drivers) && (
               <TabsTrigger value="drivers">السواق ({drivers.length})</TabsTrigger>
             )}
+            <TabsTrigger value="loyalty" className="gap-1"><Gift className="h-3.5 w-3.5" />بطاقة الولاء</TabsTrigger>
           </TabsList>
 
           <TabsContent value="orders" className="mt-4">
@@ -1012,6 +1017,9 @@ const Admin = () => {
 
           <TabsContent value="drivers" className="mt-4">
             <DriversPanel drivers={drivers} reload={loadData} />
+          </TabsContent>
+          <TabsContent value="loyalty" className="mt-4">
+            <LoyaltyPanel />
           </TabsContent>
         </Tabs>
       </main>

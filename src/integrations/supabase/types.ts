@@ -41,6 +41,45 @@ export type Database = {
         }
         Relationships: []
       }
+      customers: {
+        Row: {
+          area: string | null
+          created_at: string
+          full_name: string
+          gift_count: number
+          id: string
+          lifetime_orders: number
+          phone: string
+          qr_code: string
+          total_stamps: number
+          updated_at: string
+        }
+        Insert: {
+          area?: string | null
+          created_at?: string
+          full_name: string
+          gift_count?: number
+          id?: string
+          lifetime_orders?: number
+          phone: string
+          qr_code?: string
+          total_stamps?: number
+          updated_at?: string
+        }
+        Update: {
+          area?: string | null
+          created_at?: string
+          full_name?: string
+          gift_count?: number
+          id?: string
+          lifetime_orders?: number
+          phone?: string
+          qr_code?: string
+          total_stamps?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       delivery_zones: {
         Row: {
           created_at: string
@@ -116,7 +155,9 @@ export type Database = {
         Row: {
           archived_at: string | null
           created_at: string
+          created_by: string | null
           customer_address: string
+          customer_id: string | null
           customer_name: string
           customer_phone: string
           delivery_fee_iqd: number
@@ -125,6 +166,7 @@ export type Database = {
           driver_id: string | null
           id: string
           notes: string | null
+          stamp_added: boolean
           status: string
           total_iqd: number
           updated_at: string
@@ -132,7 +174,9 @@ export type Database = {
         Insert: {
           archived_at?: string | null
           created_at?: string
+          created_by?: string | null
           customer_address: string
+          customer_id?: string | null
           customer_name: string
           customer_phone: string
           delivery_fee_iqd?: number
@@ -141,6 +185,7 @@ export type Database = {
           driver_id?: string | null
           id?: string
           notes?: string | null
+          stamp_added?: boolean
           status?: string
           total_iqd?: number
           updated_at?: string
@@ -148,7 +193,9 @@ export type Database = {
         Update: {
           archived_at?: string | null
           created_at?: string
+          created_by?: string | null
           customer_address?: string
+          customer_id?: string | null
           customer_name?: string
           customer_phone?: string
           delivery_fee_iqd?: number
@@ -157,11 +204,19 @@ export type Database = {
           driver_id?: string | null
           id?: string
           notes?: string | null
+          stamp_added?: boolean
           status?: string
           total_iqd?: number
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "orders_delivery_zone_id_fkey"
             columns: ["delivery_zone_id"]
@@ -329,6 +384,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_loyalty_stamp: {
+        Args: { _order_id: string }
+        Returns: {
+          customer_id: string
+          gift_awarded: boolean
+          gift_count: number
+          total_stamps: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
