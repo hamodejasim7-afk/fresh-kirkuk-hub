@@ -1018,6 +1018,9 @@ const Admin = () => {
           <TabsContent value="drivers" className="mt-4">
             <DriversPanel drivers={drivers} reload={loadData} />
           </TabsContent>
+          <TabsContent value="loyalty" className="mt-4">
+            <LoyaltyPanel />
+          </TabsContent>
         </Tabs>
       </main>
     </div>
