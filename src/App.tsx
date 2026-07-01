@@ -12,6 +12,7 @@ import Admin from "./pages/Admin.tsx";
 import Driver from "./pages/Driver.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import DailyReport from "@/pages/DailyReport";
+import LoyaltyCard from "@/pages/LoyaltyCard";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import OfflineBanner from "@/components/OfflineBanner";
 import { registerPWA } from "@/pwa/register";
@@ -51,6 +52,8 @@ const App = () => {
                 }
               />
               <Route path="/report" element={<DailyReport />} />
+              <Route path="/loyalty" element={<LoyaltyCard />} />
+              <Route path="/loyalty/:qr" element={<LoyaltyCard />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

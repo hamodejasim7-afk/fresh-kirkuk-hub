@@ -44,6 +44,7 @@ import { ensureNotificationPermission, showOrderNotification } from "@/lib/notif
 import { formatIQD as fmt } from "@/lib/format";
 import { useStaffPermissions } from "@/hooks/useStaffPermissions";
 import { PermissionsDialog } from "@/components/PermissionsDialog";
+import { LoyaltyPanel } from "@/components/loyalty/LoyaltyPanel";
 
 interface Order {
   id: string;
@@ -807,6 +808,7 @@ const Admin = () => {
             {(isAdmin || perms.manage_drivers) && (
               <TabsTrigger value="drivers">السواق ({drivers.length})</TabsTrigger>
             )}
+            <TabsTrigger value="loyalty" className="gap-1"><Gift className="h-3.5 w-3.5" />بطاقة الولاء</TabsTrigger>
           </TabsList>
 
           <TabsContent value="orders" className="mt-4">
