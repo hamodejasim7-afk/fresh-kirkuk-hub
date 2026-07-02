@@ -205,12 +205,74 @@ function RegisterOrderTab({ userId }: { userId: string | null }) {
             </Button>
           </div>
         ) : (
-          <Card className="p-6 rounded-2xl h-full flex items-center justify-center text-muted-foreground">
-            ابحث عن زبون أو امسح باركوده
+          <Card className="p-6 rounded-2xl h-full flex flex-col items-center justify-center gap-3 text-muted-foreground">
+            <p>ابحث عن زبون أو امسح باركوده</p>
+            <ManualOrderDialog onDone={(c) => setCustomer(c)} userId={userId} />
           </Card>
         )}
       </div>
     </div>
+  );
+}
+
+/* ---------------- Manual quick order (offline / phone-in) ---------------- */
+function ManualOrderDialog({ onDone, userId }: { onDone: (c: Customer) => void; userId: string | null }) {
+  const [open, setOpen] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    if (!phone.trim()) return;
+    setBusy(true);
+    try {
+      let c = await findCustomerByPhone(phone);
+      if (!c) {
+        if (name.trim().length < 2) {
+          toast.error("زبون جديد — اكتب اسمه أيضاً");
+          return;
+        }
+        c = await createCustomer({ full_name: name, phone });
+        toast.success("تم إنشاء البطاقة");
+      }
+      await registerLoyaltyOrder(c, userId);
+      const refreshed = await findCustomerByPhone(c.phone);
+      if (refreshed) onDone(refreshed);
+      toast.success("تم تسجيل الطلبية اليدوية ✓");
+      setOpen(false);
+      setPhone(""); setName("");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "فشل التسجيل");
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="secondary" className="gap-2">
+          <Zap className="h-4 w-4" /> إضافة طلبية يدوية
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-sm" dir="rtl">
+        <DialogHeader><DialogTitle>طلبية يدوية (خارج الموقع)</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label>رقم الهاتف *</Label>
+            <Input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" placeholder="07XXXXXXXXX" dir="ltr" />
+          </div>
+          <div>
+            <Label>الاسم (لو زبون جديد)</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="اختياري إذا كان مسجّل" />
+          </div>
+          <Button onClick={submit} disabled={busy || !phone} className="w-full">
+            تسجيل الطلبية وإضافة ختم
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            إن كان الرقم غير مسجّل، سيتم إنشاء بطاقة جديدة تلقائياً.
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
