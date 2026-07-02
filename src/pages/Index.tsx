@@ -873,6 +873,18 @@ ${itemsList}
         </Link>
       )}
 
+      {/* My loyalty card — visible for everyone */}
+      <Link
+        to="/loyalty"
+        aria-label="بطاقتي"
+        className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full bg-secondary px-4 py-3 text-secondary-foreground shadow-2xl hover:bg-secondary/90 transition-all hover:scale-105"
+      >
+        <span className="text-lg">🎁</span>
+        <span className="text-sm font-bold">بطاقتي</span>
+      </Link>
+
+
+
       <Dialog open={trackOpen} onOpenChange={(o) => { setTrackOpen(o); if (!o) { setTrackOrders([]); setTrackPhone(""); } }}>
         <DialogContent dir="rtl" className="sm:max-w-lg">
           <DialogHeader className="text-right">
