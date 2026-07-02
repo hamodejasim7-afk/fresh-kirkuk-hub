@@ -357,8 +357,14 @@ function CustomerListTab({ customers, loading, onChange }:
                   <TableCell><Badge className="bg-primary/10 text-primary border-0">{c.gift_count}</Badge></TableCell>
                   <TableCell>
                     <div className="flex gap-1 justify-end">
-                      <Button size="icon" variant="ghost" onClick={() => setView(c)}><Eye className="h-4 w-4" /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => setEdit(c)}><Pencil className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => setView(c)} title="عرض البطاقة"><Eye className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => sendWhatsAppCard(c)} title="إرسال الرابط واتساب" className="text-green-600">
+                        <MessageCircle className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="ghost" onClick={() => downloadCustomerQr(c)} title="تحميل الباركود PNG">
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="ghost" onClick={() => setEdit(c)} title="تعديل"><Pencil className="h-4 w-4" /></Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button size="icon" variant="ghost" className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
