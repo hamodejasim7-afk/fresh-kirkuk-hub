@@ -14,19 +14,22 @@ import { toast } from "sonner";
 import freshLogo from "@/assets/fresh-logo.png";
 
 export default function LoyaltyCardPage() {
-  const { qr } = useParams<{ qr?: string }>();
+  const { qr, phone: phoneParam } = useParams<{ qr?: string; phone?: string }>();
   const [customer, setCustomer] = useState<Customer | null>(null);
-  const [loading, setLoading] = useState<boolean>(!!qr);
+  const [loading, setLoading] = useState<boolean>(!!qr || !!phoneParam);
   const [phone, setPhone] = useState("");
 
   useEffect(() => {
-    if (!qr) return;
+    if (!qr && !phoneParam) return;
     setLoading(true);
-    findCustomerByQr(qr)
+    const loader = phoneParam
+      ? findCustomerByPhone(phoneParam)
+      : findCustomerByQr(qr!);
+    loader
       .then((c) => { setCustomer(c); if (!c) toast.error("البطاقة غير موجودة"); })
       .catch(() => toast.error("خطأ في تحميل البطاقة"))
       .finally(() => setLoading(false));
-  }, [qr]);
+  }, [qr, phoneParam]);
 
   // realtime update while page is open
   useEffect(() => {
