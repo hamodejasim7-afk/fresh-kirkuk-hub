@@ -277,6 +277,27 @@ function ManualOrderDialog({ onDone, userId }: { onDone: (c: Customer) => void; 
 }
 
 /* ---------------- Customer list ---------------- */
+const cardLinkFor = (c: Customer) => `${window.location.origin}/loyalty/${c.qr_code}`;
+
+const sendWhatsAppCard = (c: Customer) => {
+  const text = `مرحباً ${c.full_name} 👋\nهذه بطاقة ولاء فريش الخاصة بك:\n${cardLinkFor(c)}\nاجمع 10 أختام واحصل على توصيل مجاني 🎁`;
+  window.open(buildWhatsAppLink(c.phone, text), "_blank");
+};
+
+const downloadCustomerQr = async (c: Customer) => {
+  try {
+    const dataUrl = await QRCode.toDataURL(cardLinkFor(c), {
+      width: 512, margin: 2, color: { dark: "#1e2c58", light: "#ffffff" },
+    });
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = `fresh-loyalty-${c.phone}.png`;
+    a.click();
+  } catch {
+    toast.error("تعذّر إنشاء الباركود");
+  }
+};
+
 function CustomerListTab({ customers, loading, onChange }:
   { customers: Customer[]; loading: boolean; onChange: () => void }) {
   const [q, setQ] = useState("");
