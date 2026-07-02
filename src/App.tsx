@@ -13,6 +13,7 @@ import Driver from "./pages/Driver.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import DailyReport from "@/pages/DailyReport";
 import LoyaltyCard from "@/pages/LoyaltyCard";
+import RegisterLoyalty from "@/pages/RegisterLoyalty";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import OfflineBanner from "@/components/OfflineBanner";
 import { registerPWA } from "@/pwa/register";
