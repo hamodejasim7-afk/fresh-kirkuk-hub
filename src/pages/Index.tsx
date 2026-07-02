@@ -664,6 +664,26 @@ ${itemsList}
         </div>
       </section>
 
+      {/* Loyalty banner */}
+      <section className="container mx-auto px-4 pt-4">
+        <Link
+          to="/register-loyalty"
+          className="group flex items-center gap-4 rounded-2xl border-0 bg-gradient-to-l from-primary via-primary to-primary-glow p-4 text-primary-foreground shadow-md transition-all hover:shadow-lg"
+        >
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur">
+            <span className="text-2xl">🎁</span>
+          </div>
+          <div className="flex-1">
+            <p className="text-sm opacity-90">بطاقة ولاء فريش</p>
+            <p className="text-base font-extrabold leading-tight">اجمع 10 أختام واحصل على توصيل مجاني</p>
+          </div>
+          <span className="hidden sm:inline-block rounded-full bg-white/95 px-4 py-2 text-sm font-bold text-primary group-hover:scale-105 transition">
+            سجّل الآن
+          </span>
+        </Link>
+      </section>
+
+
       {/* Categories */}
       <section className="container mx-auto px-4 py-6">
         <div className="flex flex-wrap gap-2">
