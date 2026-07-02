@@ -54,7 +54,10 @@ const App = () => {
               />
               <Route path="/report" element={<DailyReport />} />
               <Route path="/loyalty" element={<LoyaltyCard />} />
+              <Route path="/loyalty/qr/:qr" element={<LoyaltyCard />} />
+              <Route path="/loyalty/phone/:phone" element={<LoyaltyCard />} />
               <Route path="/loyalty/:qr" element={<LoyaltyCard />} />
+              <Route path="/register-loyalty" element={<RegisterLoyalty />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
