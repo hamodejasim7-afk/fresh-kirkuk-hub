@@ -18,8 +18,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import QRCode from "qrcode";
 import {
   UserPlus, Search, ShoppingBag, Users, BarChart3, Trash2, Pencil, Eye, Gift, ScanLine,
+  MessageCircle, Download, Zap,
 } from "lucide-react";
 import { useCustomers } from "@/hooks/useCustomers";
 import {
@@ -30,6 +32,7 @@ import type { Customer } from "@/types/loyalty";
 import { LoyaltyCardView } from "@/components/loyalty/LoyaltyCardView";
 import { QRScanner } from "@/components/loyalty/QRScanner";
 import { useAuth } from "@/contexts/AuthContext";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
 
 export function LoyaltyPanel() {
   const { customers, loading, reload } = useCustomers();
@@ -202,8 +205,9 @@ function RegisterOrderTab({ userId }: { userId: string | null }) {
             </Button>
           </div>
         ) : (
-          <Card className="p-6 rounded-2xl h-full flex items-center justify-center text-muted-foreground">
-            ابحث عن زبون أو امسح باركوده
+          <Card className="p-6 rounded-2xl h-full flex flex-col items-center justify-center gap-3 text-muted-foreground">
+            <p>ابحث عن زبون أو امسح باركوده</p>
+            <ManualOrderDialog onDone={(c) => setCustomer(c)} userId={userId} />
           </Card>
         )}
       </div>
@@ -211,7 +215,89 @@ function RegisterOrderTab({ userId }: { userId: string | null }) {
   );
 }
 
+/* ---------------- Manual quick order (offline / phone-in) ---------------- */
+function ManualOrderDialog({ onDone, userId }: { onDone: (c: Customer) => void; userId: string | null }) {
+  const [open, setOpen] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    if (!phone.trim()) return;
+    setBusy(true);
+    try {
+      let c = await findCustomerByPhone(phone);
+      if (!c) {
+        if (name.trim().length < 2) {
+          toast.error("زبون جديد — اكتب اسمه أيضاً");
+          return;
+        }
+        c = await createCustomer({ full_name: name, phone });
+        toast.success("تم إنشاء البطاقة");
+      }
+      await registerLoyaltyOrder(c, userId);
+      const refreshed = await findCustomerByPhone(c.phone);
+      if (refreshed) onDone(refreshed);
+      toast.success("تم تسجيل الطلبية اليدوية ✓");
+      setOpen(false);
+      setPhone(""); setName("");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "فشل التسجيل");
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="secondary" className="gap-2">
+          <Zap className="h-4 w-4" /> إضافة طلبية يدوية
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-sm" dir="rtl">
+        <DialogHeader><DialogTitle>طلبية يدوية (خارج الموقع)</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label>رقم الهاتف *</Label>
+            <Input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" placeholder="07XXXXXXXXX" dir="ltr" />
+          </div>
+          <div>
+            <Label>الاسم (لو زبون جديد)</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="اختياري إذا كان مسجّل" />
+          </div>
+          <Button onClick={submit} disabled={busy || !phone} className="w-full">
+            تسجيل الطلبية وإضافة ختم
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            إن كان الرقم غير مسجّل، سيتم إنشاء بطاقة جديدة تلقائياً.
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 /* ---------------- Customer list ---------------- */
+const cardLinkFor = (c: Customer) => `${window.location.origin}/loyalty/${c.qr_code}`;
+
+const sendWhatsAppCard = (c: Customer) => {
+  const text = `مرحباً ${c.full_name} 👋\nهذه بطاقة ولاء فريش الخاصة بك:\n${cardLinkFor(c)}\nاجمع 10 أختام واحصل على توصيل مجاني 🎁`;
+  window.open(buildWhatsAppLink(c.phone, text), "_blank");
+};
+
+const downloadCustomerQr = async (c: Customer) => {
+  try {
+    const dataUrl = await QRCode.toDataURL(cardLinkFor(c), {
+      width: 512, margin: 2, color: { dark: "#1e2c58", light: "#ffffff" },
+    });
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = `fresh-loyalty-${c.phone}.png`;
+    a.click();
+  } catch {
+    toast.error("تعذّر إنشاء الباركود");
+  }
+};
+
 function CustomerListTab({ customers, loading, onChange }:
   { customers: Customer[]; loading: boolean; onChange: () => void }) {
   const [q, setQ] = useState("");
@@ -292,8 +378,14 @@ function CustomerListTab({ customers, loading, onChange }:
                   <TableCell><Badge className="bg-primary/10 text-primary border-0">{c.gift_count}</Badge></TableCell>
                   <TableCell>
                     <div className="flex gap-1 justify-end">
-                      <Button size="icon" variant="ghost" onClick={() => setView(c)}><Eye className="h-4 w-4" /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => setEdit(c)}><Pencil className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => setView(c)} title="عرض البطاقة"><Eye className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => sendWhatsAppCard(c)} title="إرسال الرابط واتساب" className="text-green-600">
+                        <MessageCircle className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="ghost" onClick={() => downloadCustomerQr(c)} title="تحميل الباركود PNG">
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="ghost" onClick={() => setEdit(c)} title="تعديل"><Pencil className="h-4 w-4" /></Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button size="icon" variant="ghost" className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
