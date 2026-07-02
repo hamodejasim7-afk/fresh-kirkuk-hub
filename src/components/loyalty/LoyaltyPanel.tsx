@@ -18,8 +18,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import QRCode from "qrcode";
 import {
   UserPlus, Search, ShoppingBag, Users, BarChart3, Trash2, Pencil, Eye, Gift, ScanLine,
+  MessageCircle, Download, Zap,
 } from "lucide-react";
 import { useCustomers } from "@/hooks/useCustomers";
 import {
@@ -30,6 +32,7 @@ import type { Customer } from "@/types/loyalty";
 import { LoyaltyCardView } from "@/components/loyalty/LoyaltyCardView";
 import { QRScanner } from "@/components/loyalty/QRScanner";
 import { useAuth } from "@/contexts/AuthContext";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
 
 export function LoyaltyPanel() {
   const { customers, loading, reload } = useCustomers();
