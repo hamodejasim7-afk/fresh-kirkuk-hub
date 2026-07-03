@@ -20,7 +20,7 @@ export function LoyaltyCardView({ customer, compact }: Props) {
   const [celebrate, setCelebrate] = useState(false);
 
   useEffect(() => {
-    const payload = `${window.location.origin}/loyalty/${customer.qr_code}`;
+    const payload = `${window.location.origin}/card/${customer.phone}`;
     QRCode.toDataURL(payload, { width: 320, margin: 1, color: { dark: "#1e2c58", light: "#ffffff" } })
       .then(setQrDataUrl)
       .catch(() => setQrDataUrl(""));

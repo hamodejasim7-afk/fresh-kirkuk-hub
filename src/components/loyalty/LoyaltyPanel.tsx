@@ -32,7 +32,7 @@ import type { Customer } from "@/types/loyalty";
 import { LoyaltyCardView } from "@/components/loyalty/LoyaltyCardView";
 import { QRScanner } from "@/components/loyalty/QRScanner";
 import { useAuth } from "@/contexts/AuthContext";
-import { buildWhatsAppLink } from "@/lib/whatsapp";
+
 
 export function LoyaltyPanel() {
   const { customers, loading, reload } = useCustomers();
@@ -166,9 +166,11 @@ function RegisterOrderTab({ userId }: { userId: string | null }) {
       // wait a tick for the trigger + realtime to push the update
       const refreshed = await findCustomerByPhone(customer.phone);
       if (refreshed) setCustomer(refreshed);
-      toast.success("تم تسجيل الطلبية وإضافة الختم");
+      const newStamps = refreshed?.total_stamps ?? customer.total_stamps + 1;
+      toast.success(`✓ ${customer.full_name} — أختامه الآن ${newStamps}/10`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "فشل التسجيل");
+      console.error("[addOrder] failed", e);
+      toast.error(e instanceof Error ? e.message : "فشل تسجيل الطلبية");
     } finally { setBusy(false); }
   };
 
@@ -277,11 +279,15 @@ function ManualOrderDialog({ onDone, userId }: { onDone: (c: Customer) => void; 
 }
 
 /* ---------------- Customer list ---------------- */
-const cardLinkFor = (c: Customer) => `${window.location.origin}/loyalty/${c.qr_code}`;
+const cardLinkFor = (c: Customer) => `${window.location.origin}/card/${c.phone}`;
 
 const sendWhatsAppCard = (c: Customer) => {
   const text = `مرحباً ${c.full_name} 👋\nهذه بطاقة ولاء فريش الخاصة بك:\n${cardLinkFor(c)}\nاجمع 10 أختام واحصل على توصيل مجاني 🎁`;
-  window.open(buildWhatsAppLink(c.phone, text), "_blank");
+  // international phone: replace leading 0 with 964
+  const intl = c.phone.replace(/^0/, "964").replace(/\D/g, "");
+  const url = `https://wa.me/${intl}?text=${encodeURIComponent(text)}`;
+  const win = window.open(url, "_blank", "noopener,noreferrer");
+  if (!win) window.location.href = url;
 };
 
 const downloadCustomerQr = async (c: Customer) => {

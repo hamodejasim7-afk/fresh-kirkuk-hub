@@ -94,6 +94,14 @@ export async function registerLoyaltyOrder(customer: Customer, userId: string | 
   if (Date.now() - last < 5000) {
     throw new Error("تم تسجيل الطلبية للتو، انتظر لحظة");
   }
+
+  // Always use the current authenticated session — never anon — for writes.
+  const { data: sessionData } = await supabase.auth.getSession();
+  const uid = sessionData?.session?.user?.id ?? userId;
+  if (!uid) {
+    throw new Error("يجب تسجيل الدخول لتسجيل طلبية ولاء");
+  }
+
   const { data, error } = await supabase
     .from("orders")
     .insert({
@@ -104,12 +112,15 @@ export async function registerLoyaltyOrder(customer: Customer, userId: string | 
       status: "delivered",
       total_iqd: 0,
       delivery_fee_iqd: 0,
-      created_by: userId,
+      created_by: uid,
       notes: "طلبية ولاء يدوية",
     })
     .select("id")
     .single();
-  if (error) throw error;
+  if (error) {
+    console.error("[registerLoyaltyOrder] insert failed", error);
+    throw new Error(error.message || "فشل تسجيل الطلبية");
+  }
   sessionStorage.setItem(key, String(Date.now()));
   return data;
 }
