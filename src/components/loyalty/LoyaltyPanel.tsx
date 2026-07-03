@@ -277,11 +277,15 @@ function ManualOrderDialog({ onDone, userId }: { onDone: (c: Customer) => void; 
 }
 
 /* ---------------- Customer list ---------------- */
-const cardLinkFor = (c: Customer) => `${window.location.origin}/loyalty/${c.qr_code}`;
+const cardLinkFor = (c: Customer) => `${window.location.origin}/card/${c.phone}`;
 
 const sendWhatsAppCard = (c: Customer) => {
   const text = `مرحباً ${c.full_name} 👋\nهذه بطاقة ولاء فريش الخاصة بك:\n${cardLinkFor(c)}\nاجمع 10 أختام واحصل على توصيل مجاني 🎁`;
-  window.open(buildWhatsAppLink(c.phone, text), "_blank");
+  // international phone: replace leading 0 with 964
+  const intl = c.phone.replace(/^0/, "964").replace(/\D/g, "");
+  const url = `https://wa.me/${intl}?text=${encodeURIComponent(text)}`;
+  const win = window.open(url, "_blank", "noopener,noreferrer");
+  if (!win) window.location.href = url;
 };
 
 const downloadCustomerQr = async (c: Customer) => {
