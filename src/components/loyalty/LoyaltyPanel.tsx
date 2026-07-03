@@ -166,9 +166,11 @@ function RegisterOrderTab({ userId }: { userId: string | null }) {
       // wait a tick for the trigger + realtime to push the update
       const refreshed = await findCustomerByPhone(customer.phone);
       if (refreshed) setCustomer(refreshed);
-      toast.success("تم تسجيل الطلبية وإضافة الختم");
+      const newStamps = refreshed?.total_stamps ?? customer.total_stamps + 1;
+      toast.success(`✓ ${customer.full_name} — أختامه الآن ${newStamps}/10`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "فشل التسجيل");
+      console.error("[addOrder] failed", e);
+      toast.error(e instanceof Error ? e.message : "فشل تسجيل الطلبية");
     } finally { setBusy(false); }
   };
 
