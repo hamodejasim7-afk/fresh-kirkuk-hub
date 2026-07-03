@@ -32,7 +32,7 @@ import type { Customer } from "@/types/loyalty";
 import { LoyaltyCardView } from "@/components/loyalty/LoyaltyCardView";
 import { QRScanner } from "@/components/loyalty/QRScanner";
 import { useAuth } from "@/contexts/AuthContext";
-import { buildWhatsAppLink } from "@/lib/whatsapp";
+
 
 export function LoyaltyPanel() {
   const { customers, loading, reload } = useCustomers();
