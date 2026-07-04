@@ -8,6 +8,7 @@ import freshLogo from "@/assets/fresh-logo.png";
 import type { Customer } from "@/types/loyalty";
 import { STAMPS_PER_GIFT } from "@/types/loyalty";
 import { cn } from "@/lib/utils";
+import { buildCardUrl } from "@/config/constants";
 
 interface Props {
   customer: Customer;
@@ -20,7 +21,7 @@ export function LoyaltyCardView({ customer, compact }: Props) {
   const [celebrate, setCelebrate] = useState(false);
 
   useEffect(() => {
-    const payload = `${window.location.origin}/card/${customer.phone}`;
+    const payload = buildCardUrl(customer.phone);
     QRCode.toDataURL(payload, { width: 320, margin: 1, color: { dark: "#1e2c58", light: "#ffffff" } })
       .then(setQrDataUrl)
       .catch(() => setQrDataUrl(""));

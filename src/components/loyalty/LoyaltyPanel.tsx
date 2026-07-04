@@ -23,6 +23,7 @@ import {
   UserPlus, Search, ShoppingBag, Users, BarChart3, Trash2, Pencil, Eye, Gift, ScanLine,
   MessageCircle, Download, Zap,
 } from "lucide-react";
+import { buildCardUrl } from "@/config/constants";
 import { useCustomers } from "@/hooks/useCustomers";
 import {
   createCustomer, deleteCustomer, updateCustomer,
@@ -279,7 +280,7 @@ function ManualOrderDialog({ onDone, userId }: { onDone: (c: Customer) => void; 
 }
 
 /* ---------------- Customer list ---------------- */
-const cardLinkFor = (c: Customer) => `${window.location.origin}/card/${c.phone}`;
+const cardLinkFor = (c: Customer) => buildCardUrl(c.phone);
 
 const sendWhatsAppCard = (c: Customer) => {
   const text = `مرحباً ${c.full_name} 👋\nهذه بطاقة ولاء فريش الخاصة بك:\n${cardLinkFor(c)}\nاجمع 10 أختام واحصل على توصيل مجاني 🎁`;
