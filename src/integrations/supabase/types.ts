@@ -387,10 +387,10 @@ export type Database = {
       apply_loyalty_stamp: {
         Args: { _order_id: string }
         Returns: {
-          customer_id: string
-          gift_awarded: boolean
-          gift_count: number
-          total_stamps: number
+          out_customer_id: string
+          out_gift_awarded: boolean
+          out_gift_count: number
+          out_total_stamps: number
         }[]
       }
       has_role: {
