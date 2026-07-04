@@ -23,6 +23,7 @@ import {
   UserPlus, Search, ShoppingBag, Users, BarChart3, Trash2, Pencil, Eye, Gift, ScanLine,
   MessageCircle, Download, Zap,
 } from "lucide-react";
+import { buildCardUrl } from "@/config/constants";
 import { useCustomers } from "@/hooks/useCustomers";
 import {
   createCustomer, deleteCustomer, updateCustomer,
@@ -279,7 +280,6 @@ function ManualOrderDialog({ onDone, userId }: { onDone: (c: Customer) => void; 
 }
 
 /* ---------------- Customer list ---------------- */
-import { buildCardUrl } from "@/config/constants";
 const cardLinkFor = (c: Customer) => buildCardUrl(c.phone);
 
 const sendWhatsAppCard = (c: Customer) => {
