@@ -279,7 +279,8 @@ function ManualOrderDialog({ onDone, userId }: { onDone: (c: Customer) => void; 
 }
 
 /* ---------------- Customer list ---------------- */
-const cardLinkFor = (c: Customer) => `${window.location.origin}/card/${c.phone}`;
+import { buildCardUrl } from "@/config/constants";
+const cardLinkFor = (c: Customer) => buildCardUrl(c.phone);
 
 const sendWhatsAppCard = (c: Customer) => {
   const text = `مرحباً ${c.full_name} 👋\nهذه بطاقة ولاء فريش الخاصة بك:\n${cardLinkFor(c)}\nاجمع 10 أختام واحصل على توصيل مجاني 🎁`;
