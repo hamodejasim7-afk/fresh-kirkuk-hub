@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,10 @@ import freshLogo from "@/assets/fresh-logo.png";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const rawNext = params.get("next");
+  // Only allow same-origin relative paths as return targets.
+  const next = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : null;
   const { user, role, loading } = useAuth();
   const [busy, setBusy] = useState(false);
 
@@ -27,11 +31,12 @@ const Auth = () => {
 
   useEffect(() => {
     if (!loading && user) {
-      if (role === "admin") navigate("/admin", { replace: true });
+      if (next) navigate(next, { replace: true });
+      else if (role === "admin") navigate("/admin", { replace: true });
       else if (role === "driver") navigate("/driver", { replace: true });
       else navigate("/", { replace: true });
     }
-  }, [user, role, loading, navigate]);
+  }, [user, role, loading, navigate, next]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +60,7 @@ const Auth = () => {
       email: signupEmail,
       password: signupPassword,
       options: {
-        emailRedirectTo: `${window.location.origin}/`,
+        emailRedirectTo: `${window.location.origin}${next ?? "/"}`,
         data: { full_name: signupName, phone: signupPhone },
       },
     });

@@ -15,6 +15,7 @@ import DailyReport from "@/pages/DailyReport";
 import LoyaltyCard from "@/pages/LoyaltyCard";
 import PublicCard from "@/pages/PublicCard";
 import RegisterLoyalty from "@/pages/RegisterLoyalty";
+import OAuthConsent from "@/pages/OAuthConsent";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import OfflineBanner from "@/components/OfflineBanner";
 import { registerPWA } from "@/pwa/register";
@@ -60,6 +61,7 @@ const App = () => {
               <Route path="/loyalty/:qr" element={<LoyaltyCard />} />
               <Route path="/card/:phone" element={<PublicCard />} />
               <Route path="/register-loyalty" element={<RegisterLoyalty />} />
+              <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
