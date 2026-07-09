@@ -115,6 +115,7 @@ export async function registerLoyaltyOrder(customer: Customer, userId: string | 
       delivery_fee_iqd: 0,
       created_by: uid,
       notes: "طلبية ولاء يدوية",
+      store_id: DEFAULT_STORE_ID,
     })
     .select("id")
     .single();
