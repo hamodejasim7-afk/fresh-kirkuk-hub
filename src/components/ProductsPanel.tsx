@@ -120,6 +120,7 @@ export const ProductsPanel = () => {
       stock_qty: form.stock_qty.trim() === "" ? null : Number(form.stock_qty),
       sort_order: Number(form.sort_order) || 0,
       allow_decimal: form.allow_decimal,
+      store_id: DEFAULT_STORE_ID,
     };
 
     const { error } = editing
