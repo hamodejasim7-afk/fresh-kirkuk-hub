@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { DEFAULT_STORE_ID } from "@/config/constants";
 import type { Customer } from "@/types/loyalty";
 
 const normalizePhone = (raw: string) => raw.replace(/[^\d]/g, "");
