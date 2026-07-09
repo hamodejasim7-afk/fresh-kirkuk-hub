@@ -15,8 +15,8 @@ export interface DBProduct {
   allow_decimal?: boolean;
 }
 
-export function useProducts(opts: { onlyAvailable?: boolean } = {}) {
-  const { onlyAvailable = false } = opts;
+export function useProducts(opts: { onlyAvailable?: boolean; storeId?: string | null } = {}) {
+  const { onlyAvailable = false, storeId } = opts;
   const [products, setProducts] = useState<DBProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<any>(null);
@@ -25,10 +25,11 @@ export function useProducts(opts: { onlyAvailable?: boolean } = {}) {
     setLoading(true);
     let q = supabase.from("products").select("*").order("sort_order", { ascending: true });
     if (onlyAvailable) q = q.eq("is_available", true);
+    if (storeId) q = q.eq("store_id", storeId);
     const { data, error } = await q;
     if (!error && data) setProducts(data as DBProduct[]);
     setLoading(false);
-  }, [onlyAvailable]);
+  }, [onlyAvailable, storeId]);
 
   useEffect(() => {
     load();
@@ -52,7 +53,7 @@ export function useProducts(opts: { onlyAvailable?: boolean } = {}) {
         channelRef.current = null;
       }
     };
-  }, []);
+  }, [load]);
 
   return { products, loading, reload: load };
 }

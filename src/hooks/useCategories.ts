@@ -8,8 +8,8 @@ export interface Category {
   is_active: boolean;
 }
 
-export function useCategories(opts: { onlyActive?: boolean } = {}) {
-  const { onlyActive = false } = opts;
+export function useCategories(opts: { onlyActive?: boolean; storeId?: string | null } = {}) {
+  const { onlyActive = false, storeId } = opts;
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -17,10 +17,11 @@ export function useCategories(opts: { onlyActive?: boolean } = {}) {
     setLoading(true);
     let q = supabase.from("categories").select("*").order("sort_order").order("name");
     if (onlyActive) q = q.eq("is_active", true);
+    if (storeId) q = q.eq("store_id", storeId);
     const { data, error } = await q;
     if (!error && data) setCategories(data as Category[]);
     setLoading(false);
-  }, [onlyActive]);
+  }, [onlyActive, storeId]);
 
   useEffect(() => {
     load();

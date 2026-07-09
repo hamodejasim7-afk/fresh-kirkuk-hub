@@ -14,6 +14,8 @@ export interface DeliveryZone {
 
 interface Options {
   onlyActive?: boolean;
+  /** Reserved for future multi-store support; delivery_zones currently has no store_id column. */
+  storeId?: string | null;
 }
 
 export function useDeliveryZones(opts: Options = {}) {

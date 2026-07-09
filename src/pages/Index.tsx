@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ensureNotificationPermission, showOrderNotification } from "@/lib/notifications";
-import { DEFAULT_STORE_ID } from "@/config/constants";
+import { useStore } from "@/contexts/StoreContext";
+import { StoreSelector } from "@/components/StoreSelector";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -37,8 +38,10 @@ const Index = () => {
   const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
   const { settings: storeSettings, loading } = useStoreSettings();
-  const { products } = useProducts({ onlyAvailable: true });
-  const { categories } = useCategories({ onlyActive: true });
+  const { currentStore, loading: storeLoading } = useStore();
+  const storeId = currentStore?.id ?? null;
+  const { products } = useProducts({ onlyAvailable: true, storeId });
+  const { categories } = useCategories({ onlyActive: true, storeId });
   const [activeCat, setActiveCat] = useState<string>("الكل");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
@@ -272,7 +275,7 @@ ${itemsList}
           delivery_zone_id: selectedZone?.id ?? null,
           delivery_zone_name: selectedZone?.name ?? null,
           status: "new",
-          store_id: DEFAULT_STORE_ID,
+          store_id: storeId,
         } as any);
 
       if (orderErr) throw orderErr;
@@ -360,6 +363,17 @@ ${itemsList}
     setCartOpen(true);
     toast.success("تمت إضافة الطلب السابق للسلة ✓", { position: "bottom-right" });
   };
+
+  if (storeLoading) {
+    return (
+      <div dir="rtl" className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">
+        جاري التحميل...
+      </div>
+    );
+  }
+  if (!currentStore) {
+    return <StoreSelector />;
+  }
 
   return (
     <div dir="rtl" className="min-h-screen bg-background">
