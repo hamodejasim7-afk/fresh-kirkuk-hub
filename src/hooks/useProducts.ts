@@ -53,7 +53,7 @@ export function useProducts(opts: { onlyAvailable?: boolean; storeId?: string | 
         channelRef.current = null;
       }
     };
-  }, []);
+  }, [load]);
 
   return { products, loading, reload: load };
 }

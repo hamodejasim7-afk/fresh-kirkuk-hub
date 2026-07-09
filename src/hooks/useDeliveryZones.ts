@@ -14,10 +14,11 @@ export interface DeliveryZone {
 
 interface Options {
   onlyActive?: boolean;
+  storeId?: string | null;
 }
 
 export function useDeliveryZones(opts: Options = {}) {
-  const { onlyActive = false } = opts;
+  const { onlyActive = false, storeId } = opts;
   const [zones, setZones] = useState<DeliveryZone[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,10 +30,11 @@ export function useDeliveryZones(opts: Options = {}) {
       .order("sort_order", { ascending: true })
       .order("name", { ascending: true });
     if (onlyActive) query = query.eq("is_active", true);
+    if (storeId) query = (query as any).eq("store_id", storeId);
     const { data, error } = await query;
     if (!error && data) setZones(data as unknown as DeliveryZone[]);
     setLoading(false);
-  }, [onlyActive]);
+  }, [onlyActive, storeId]);
 
   useEffect(() => { load(); }, [load]);
 
