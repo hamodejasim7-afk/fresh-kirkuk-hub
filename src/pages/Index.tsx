@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ensureNotificationPermission, showOrderNotification } from "@/lib/notifications";
+import { DEFAULT_STORE_ID } from "@/config/constants";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -271,6 +272,7 @@ ${itemsList}
           delivery_zone_id: selectedZone?.id ?? null,
           delivery_zone_name: selectedZone?.name ?? null,
           status: "new",
+          store_id: DEFAULT_STORE_ID,
         } as any);
 
       if (orderErr) throw orderErr;

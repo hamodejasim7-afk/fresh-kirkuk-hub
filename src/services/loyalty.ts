@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { DEFAULT_STORE_ID } from "@/config/constants";
 import type { Customer } from "@/types/loyalty";
 
 const normalizePhone = (raw: string) => raw.replace(/[^\d]/g, "");
@@ -114,6 +115,7 @@ export async function registerLoyaltyOrder(customer: Customer, userId: string | 
       delivery_fee_iqd: 0,
       created_by: uid,
       notes: "طلبية ولاء يدوية",
+      store_id: DEFAULT_STORE_ID,
     })
     .select("id")
     .single();

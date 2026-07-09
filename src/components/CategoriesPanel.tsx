@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { DEFAULT_STORE_ID } from "@/config/constants";
 import { useCategories, type Category } from "@/hooks/useCategories";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +42,7 @@ export const CategoriesPanel = () => {
       name: form.name.trim(),
       sort_order: Number(form.sort_order) || 0,
       is_active: form.is_active,
+      store_id: DEFAULT_STORE_ID,
     };
     const { error } = editing
       ? await supabase.from("categories").update(payload).eq("id", editing.id)

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { DEFAULT_STORE_ID } from "@/config/constants";
 import { useProducts, type DBProduct } from "@/hooks/useProducts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -120,6 +121,7 @@ export const ProductsPanel = () => {
       stock_qty: form.stock_qty.trim() === "" ? null : Number(form.stock_qty),
       sort_order: Number(form.sort_order) || 0,
       allow_decimal: form.allow_decimal,
+      store_id: DEFAULT_STORE_ID,
     };
 
     const { error } = editing
