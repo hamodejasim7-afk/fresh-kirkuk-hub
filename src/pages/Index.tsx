@@ -364,6 +364,17 @@ ${itemsList}
     toast.success("تمت إضافة الطلب السابق للسلة ✓", { position: "bottom-right" });
   };
 
+  if (storeLoading) {
+    return (
+      <div dir="rtl" className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">
+        جاري التحميل...
+      </div>
+    );
+  }
+  if (!currentStore) {
+    return <StoreSelector />;
+  }
+
   return (
     <div dir="rtl" className="min-h-screen bg-background">
       {/* Header */}
