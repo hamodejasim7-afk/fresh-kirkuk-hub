@@ -61,6 +61,8 @@ interface Order {
   updated_at: string;
   delivery_zone_id: string | null;
   delivery_zone_name: string | null;
+  delivery_area_id: string | null;
+  store_id: string;
   customer_id: string | null;
   stamp_added: boolean;
   created_by: string | null;
