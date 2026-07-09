@@ -116,7 +116,7 @@ const Admin = () => {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   useEffect(() => {
     if (!user) { setIsSuperAdmin(false); return; }
-    supabase.rpc("is_super_admin").then(({ data }) => setIsSuperAdmin(!!data)).catch(() => setIsSuperAdmin(false));
+    supabase.rpc("is_super_admin").then(({ data }) => setIsSuperAdmin(!!data));
   }, [user]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [items, setItems] = useState<Record<string, OrderItem[]>>({});
@@ -1032,6 +1032,11 @@ const Admin = () => {
           <TabsContent value="loyalty" className="mt-4">
             <LoyaltyPanel />
           </TabsContent>
+          {isSuperAdmin && (
+            <TabsContent value="stores" className="mt-4">
+              <StoresPanel />
+            </TabsContent>
+          )}
         </Tabs>
       </main>
     </div>
