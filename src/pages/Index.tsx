@@ -272,6 +272,7 @@ ${itemsList}
           delivery_zone_id: selectedZone?.id ?? null,
           delivery_zone_name: selectedZone?.name ?? null,
           status: "new",
+          store_id: DEFAULT_STORE_ID,
         } as any);
 
       if (orderErr) throw orderErr;
