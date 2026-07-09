@@ -115,6 +115,7 @@ export const PricingPanel = () => {
       emoji: newP.emoji.trim() || null,
       is_available: true,
       sort_order: products.length + 1,
+      store_id: DEFAULT_STORE_ID,
     });
     setAdding(false);
     if (error) return toast.error("فشل الإضافة: " + error.message);
