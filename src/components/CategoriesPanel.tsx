@@ -42,6 +42,7 @@ export const CategoriesPanel = () => {
       name: form.name.trim(),
       sort_order: Number(form.sort_order) || 0,
       is_active: form.is_active,
+      store_id: DEFAULT_STORE_ID,
     };
     const { error } = editing
       ? await supabase.from("categories").update(payload).eq("id", editing.id)
