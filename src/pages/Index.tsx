@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ensureNotificationPermission, showOrderNotification } from "@/lib/notifications";
 import { useStore } from "@/contexts/StoreContext";
-import { StoreSelector } from "@/components/StoreSelector";
+import { Store as StoreIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
