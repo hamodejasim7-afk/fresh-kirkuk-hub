@@ -460,12 +460,14 @@ const Admin = () => {
   };
 
   const loadArchive = async () => {
-    const { data: ordersData, error } = await supabase
+    let archiveQuery = supabase
       .from("orders")
       .select("*")
       .not("archived_at", "is", null)
       .order("archived_at", { ascending: false })
       .limit(500);
+    if (effectiveStoreId) archiveQuery = archiveQuery.eq("store_id", effectiveStoreId);
+    const { data: ordersData, error } = await archiveQuery;
     if (error) {
       toast.error("فشل تحميل الأرشيف");
       return;
