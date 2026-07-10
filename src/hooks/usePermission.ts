@@ -13,6 +13,6 @@ export function usePermission(key: keyof StaffPermissions | string): boolean {
   const { isSuperAdmin, isStoreAdmin } = useAuth();
   const { perms, extra } = useStaffPermissions();
   if (isSuperAdmin || isStoreAdmin) return true;
-  if (key in perms) return !!(perms as Record<string, boolean>)[key];
+  if (key in perms) return !!(perms as unknown as Record<string, boolean>)[key];
   return !!extra[key];
 }
