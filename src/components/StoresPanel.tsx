@@ -299,6 +299,7 @@ export function StoresPanel() {
                   <TableCell>
                     <div className="flex gap-1 flex-wrap">
                       <Button size="sm" variant="outline" onClick={() => openEdit(s)} className="gap-1"><Pencil className="h-3.5 w-3.5" />تعديل</Button>
+                      <Button size="sm" variant="default" onClick={() => setSetupStore(s)} className="gap-1"><Wand2 className="h-3.5 w-3.5" />إعداد</Button>
                       {s.status !== "active" ? (
                         <Button size="sm" variant="outline" onClick={() => activate(s)} className="gap-1"><Power className="h-3.5 w-3.5" />تفعيل</Button>
                       ) : (
