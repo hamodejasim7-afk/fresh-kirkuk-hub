@@ -52,13 +52,28 @@ export async function createCustomer(input: {
   const phone = normalizePhone(input.phone);
   if (full_name.length < 2) throw new Error("الاسم قصير جداً");
   if (!validatePhone(phone)) throw new Error("رقم الهاتف غير صالح");
+
+  // Auto-resolve store_id from the caller's profile when not provided,
+  // so RLS ("store users insert own store customers") accepts the row.
+  let storeId = input.store_id ?? null;
+  if (!storeId) {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const uid = sessionData?.session?.user?.id;
+    if (uid) {
+      const { data: prof } = await supabase
+        .from("profiles").select("store_id").eq("id", uid).maybeSingle();
+      storeId = (prof as { store_id: string | null } | null)?.store_id ?? null;
+    }
+  }
+
   const payload: {
     full_name: string;
     phone: string;
     area: string | null;
     store_id?: string;
   } = { full_name, phone, area: input.area?.trim() || null };
-  if (input.store_id) payload.store_id = input.store_id;
+  if (storeId) payload.store_id = storeId;
+
   const { data, error } = await supabase
     .from("customers")
     .insert(payload)
