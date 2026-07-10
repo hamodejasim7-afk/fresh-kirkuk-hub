@@ -51,9 +51,9 @@ const emptyForm: FormState = {
   allow_decimal: true,
 };
 
-export const ProductsPanel = () => {
-  const { products, loading, reload } = useProducts();
-  const { categories } = useCategories({ onlyActive: true });
+export const ProductsPanel = ({ storeId }: { storeId?: string } = {}) => {
+  const { products, loading, reload } = useProducts({ storeId });
+  const { categories } = useCategories({ onlyActive: true, storeId });
   const categoryNames = categories.map((c) => c.name);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<DBProduct | null>(null);
