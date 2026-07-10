@@ -400,6 +400,7 @@ export type Database = {
           manage_orders: boolean
           manage_pricing: boolean
           manage_products: boolean
+          permissions: Json
           updated_at: string
           user_id: string
           view_reports: boolean
@@ -411,6 +412,7 @@ export type Database = {
           manage_orders?: boolean
           manage_pricing?: boolean
           manage_products?: boolean
+          permissions?: Json
           updated_at?: string
           user_id: string
           view_reports?: boolean
@@ -422,6 +424,7 @@ export type Database = {
           manage_orders?: boolean
           manage_pricing?: boolean
           manage_products?: boolean
+          permissions?: Json
           updated_at?: string
           user_id?: string
           view_reports?: boolean
@@ -619,6 +622,7 @@ export type Database = {
         }[]
       }
       auth_store_id: { Args: never; Returns: string }
+      can_manage_user: { Args: { _target: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -627,6 +631,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_accountant: { Args: { _user_id: string }; Returns: boolean }
+      is_store_admin_of: { Args: { _store: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
     }
     Enums: {
