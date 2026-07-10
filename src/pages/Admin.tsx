@@ -205,12 +205,16 @@ const Admin = () => {
   const loadData = async (opts?: { silent?: boolean }) => {
     if (!opts?.silent) setLoading(true);
 
-    // Active orders only (not archived)
-    const { data: ordersData, error: ordersErr } = await supabase
+    // Active orders only (not archived). Scope to effective store when set so
+    // super admin viewing a specific store gets only that store's orders; RLS
+    // already restricts every non-super-admin caller to their own store.
+    let ordersQuery = supabase
       .from("orders")
       .select("*")
       .is("archived_at", null)
       .order("created_at", { ascending: false });
+    if (effectiveStoreId) ordersQuery = ordersQuery.eq("store_id", effectiveStoreId);
+    const { data: ordersData, error: ordersErr } = await ordersQuery;
 
     if (ordersErr) {
       if (!opts?.silent) toast.error("فشل تحميل الطلبات");
