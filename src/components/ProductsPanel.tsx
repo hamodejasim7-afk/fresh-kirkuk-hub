@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { DEFAULT_STORE_ID } from "@/config/constants";
+// tenant scope comes from the caller via storeId prop; no hardcoded default.
 import { useProducts, type DBProduct } from "@/hooks/useProducts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,7 +51,7 @@ const emptyForm: FormState = {
   allow_decimal: true,
 };
 
-export const ProductsPanel = ({ storeId }: { storeId?: string } = {}) => {
+export const ProductsPanel = ({ storeId }: { storeId?: string | null } = {}) => {
   const { products, loading, reload } = useProducts({ storeId });
   const { categories } = useCategories({ onlyActive: true, storeId });
   const categoryNames = categories.map((c) => c.name);
@@ -108,9 +108,10 @@ export const ProductsPanel = ({ storeId }: { storeId?: string } = {}) => {
     if (!form.name.trim()) return toast.error("اسم المنتج مطلوب");
     const price = Number(form.price_iqd);
     if (!Number.isFinite(price) || price < 0) return toast.error("السعر غير صالح");
+    if (!editing && !storeId) return toast.error("اختر متجراً أولاً قبل إضافة منتج");
 
     setSaving(true);
-    const payload = {
+    const payload: Record<string, unknown> = {
       name: form.name.trim(),
       category: form.category,
       price_iqd: Math.round(price),
@@ -121,12 +122,12 @@ export const ProductsPanel = ({ storeId }: { storeId?: string } = {}) => {
       stock_qty: form.stock_qty.trim() === "" ? null : Number(form.stock_qty),
       sort_order: Number(form.sort_order) || 0,
       allow_decimal: form.allow_decimal,
-      store_id: storeId ?? DEFAULT_STORE_ID,
     };
+    if (!editing && storeId) payload.store_id = storeId;
 
     const { error } = editing
       ? await supabase.from("products").update(payload).eq("id", editing.id)
-      : await supabase.from("products").insert(payload);
+      : await supabase.from("products").insert(payload as any);
 
     setSaving(false);
     if (error) return toast.error("فشل الحفظ: " + error.message);

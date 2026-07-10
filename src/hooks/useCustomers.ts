@@ -3,7 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { listCustomers } from "@/services/loyalty";
 import type { Customer } from "@/types/loyalty";
 
-export function useCustomers() {
+/**
+ * @param storeId Optional store filter. Store users can leave this undefined
+ *   (RLS scopes them). Super admin should pass the currently-selected store's
+ *   id so the panel doesn't fan out across every tenant.
+ */
+export function useCustomers(opts: { storeId?: string | null } = {}) {
+  const { storeId } = opts;
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -11,13 +17,14 @@ export function useCustomers() {
   const reload = useCallback(async () => {
     try {
       const rows = await listCustomers();
-      setCustomers(rows);
+      const filtered = storeId ? rows.filter((c) => (c as { store_id?: string | null }).store_id === storeId) : rows;
+      setCustomers(filtered);
     } catch {
       // ignore — surfaced by callers when they mutate
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [storeId]);
 
   useEffect(() => {
     reload();
