@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.parse-price-image]
 verify_jwt = false
+
+[functions.update-user-status]
+verify_jwt = false
