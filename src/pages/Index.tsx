@@ -386,6 +386,13 @@ ${itemsList}
               </a>
               <p className="text-xs text-muted-foreground">📍 {STORE_LOCATION}</p>
             </div>
+            {currentStore && (
+              <Button variant="outline" size="sm" onClick={openSelector} className="gap-1 h-9">
+                <StoreIcon className="h-4 w-4" />
+                <span className="hidden sm:inline max-w-[120px] truncate">{currentStore.name}</span>
+                <span className="text-xs text-muted-foreground">تغيير</span>
+              </Button>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
