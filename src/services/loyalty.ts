@@ -46,14 +46,22 @@ export async function createCustomer(input: {
   full_name: string;
   phone: string;
   area?: string | null;
+  store_id?: string | null;
 }): Promise<Customer> {
   const full_name = input.full_name.trim();
   const phone = normalizePhone(input.phone);
   if (full_name.length < 2) throw new Error("الاسم قصير جداً");
   if (!validatePhone(phone)) throw new Error("رقم الهاتف غير صالح");
+  const payload: {
+    full_name: string;
+    phone: string;
+    area: string | null;
+    store_id?: string;
+  } = { full_name, phone, area: input.area?.trim() || null };
+  if (input.store_id) payload.store_id = input.store_id;
   const { data, error } = await supabase
     .from("customers")
-    .insert({ full_name, phone, area: input.area?.trim() || null })
+    .insert(payload)
     .select("*")
     .single();
   if (error) {
@@ -62,6 +70,7 @@ export async function createCustomer(input: {
   }
   return data as Customer;
 }
+
 
 export async function updateCustomer(id: string, patch: Partial<Pick<Customer, "full_name" | "phone" | "area">>) {
   const clean: { full_name?: string; phone?: string; area?: string | null } = {};
