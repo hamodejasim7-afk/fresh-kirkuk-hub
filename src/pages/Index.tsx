@@ -38,7 +38,7 @@ const Index = () => {
   const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
   const { settings: storeSettings, loading } = useStoreSettings();
-  const { currentStore, loading: storeLoading } = useStore();
+  const { currentStore, loading: storeLoading, openSelector } = useStore();
   const storeId = currentStore?.id ?? null;
   const { products } = useProducts({ onlyAvailable: true, storeId });
   const { categories } = useCategories({ onlyActive: true, storeId });
