@@ -17,8 +17,8 @@ import {
 import { Plus, Pencil, Trash2, Tag } from "lucide-react";
 import { toast } from "sonner";
 
-export const CategoriesPanel = () => {
-  const { categories, loading, reload } = useCategories();
+export const CategoriesPanel = ({ storeId }: { storeId?: string } = {}) => {
+  const { categories, loading, reload } = useCategories({ storeId });
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
   const [form, setForm] = useState({ name: "", sort_order: "0", is_active: true });
@@ -42,7 +42,7 @@ export const CategoriesPanel = () => {
       name: form.name.trim(),
       sort_order: Number(form.sort_order) || 0,
       is_active: form.is_active,
-      store_id: DEFAULT_STORE_ID,
+      store_id: storeId ?? DEFAULT_STORE_ID,
     };
     const { error } = editing
       ? await supabase.from("categories").update(payload).eq("id", editing.id)
