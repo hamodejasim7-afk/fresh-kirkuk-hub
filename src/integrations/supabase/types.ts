@@ -62,6 +62,7 @@ export type Database = {
           lifetime_orders: number
           phone: string
           qr_code: string
+          store_id: string | null
           total_stamps: number
           updated_at: string
         }
@@ -74,6 +75,7 @@ export type Database = {
           lifetime_orders?: number
           phone: string
           qr_code?: string
+          store_id?: string | null
           total_stamps?: number
           updated_at?: string
         }
@@ -86,10 +88,19 @@ export type Database = {
           lifetime_orders?: number
           phone?: string
           qr_code?: string
+          store_id?: string | null
           total_stamps?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customers_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       delivery_areas: {
         Row: {
