@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ensureNotificationPermission, showOrderNotification } from "@/lib/notifications";
 import { useStore } from "@/contexts/StoreContext";
-import { StoreSelector } from "@/components/StoreSelector";
+import { Store as StoreIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -38,7 +38,7 @@ const Index = () => {
   const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
   const { settings: storeSettings, loading } = useStoreSettings();
-  const { currentStore, loading: storeLoading } = useStore();
+  const { currentStore, loading: storeLoading, openSelector } = useStore();
   const storeId = currentStore?.id ?? null;
   const { products } = useProducts({ onlyAvailable: true, storeId });
   const { categories } = useCategories({ onlyActive: true, storeId });
@@ -371,9 +371,6 @@ ${itemsList}
       </div>
     );
   }
-  if (!currentStore) {
-    return <StoreSelector />;
-  }
 
   return (
     <div dir="rtl" className="min-h-screen bg-background">
@@ -389,6 +386,13 @@ ${itemsList}
               </a>
               <p className="text-xs text-muted-foreground">📍 {STORE_LOCATION}</p>
             </div>
+            {currentStore && (
+              <Button variant="outline" size="sm" onClick={openSelector} className="gap-1 h-9">
+                <StoreIcon className="h-4 w-4" />
+                <span className="hidden sm:inline max-w-[120px] truncate">{currentStore.name}</span>
+                <span className="text-xs text-muted-foreground">تغيير</span>
+              </Button>
+            )}
           </div>
 
           <div className="flex items-center gap-2">

@@ -18,6 +18,7 @@ import PublicCard from "@/pages/PublicCard";
 import RegisterLoyalty from "@/pages/RegisterLoyalty";
 import OAuthConsent from "@/pages/OAuthConsent";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import { StoreSelectorDialog } from "@/components/StoreSelectorDialog";
 import OfflineBanner from "@/components/OfflineBanner";
 import { registerPWA } from "@/pwa/register";
 
@@ -68,6 +69,7 @@ const App = () => {
               <Route path="*" element={<NotFound />} />
             </Routes>
             <PWAInstallPrompt />
+            <StoreSelectorDialog />
             </StoreProvider>
           </AuthProvider>
         </BrowserRouter>

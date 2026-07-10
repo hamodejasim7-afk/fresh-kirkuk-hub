@@ -51,9 +51,9 @@ const emptyForm: FormState = {
   allow_decimal: true,
 };
 
-export const ProductsPanel = () => {
-  const { products, loading, reload } = useProducts();
-  const { categories } = useCategories({ onlyActive: true });
+export const ProductsPanel = ({ storeId }: { storeId?: string } = {}) => {
+  const { products, loading, reload } = useProducts({ storeId });
+  const { categories } = useCategories({ onlyActive: true, storeId });
   const categoryNames = categories.map((c) => c.name);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<DBProduct | null>(null);
@@ -121,7 +121,7 @@ export const ProductsPanel = () => {
       stock_qty: form.stock_qty.trim() === "" ? null : Number(form.stock_qty),
       sort_order: Number(form.sort_order) || 0,
       allow_decimal: form.allow_decimal,
-      store_id: DEFAULT_STORE_ID,
+      store_id: storeId ?? DEFAULT_STORE_ID,
     };
 
     const { error } = editing

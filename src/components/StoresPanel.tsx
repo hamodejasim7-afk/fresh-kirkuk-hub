@@ -20,7 +20,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Store as StoreIcon, Plus, Pencil, Power, PowerOff, Archive } from "lucide-react";
+import { Store as StoreIcon, Plus, Pencil, Power, PowerOff, Archive, Wand2 } from "lucide-react";
+import { StoreSetupWizard } from "@/components/store-setup/StoreSetupWizard";
 
 interface StoreRow {
   id: string;
@@ -100,6 +101,8 @@ export function StoresPanel() {
   const [saving, setSaving] = useState(false);
 
   const [confirm, setConfirm] = useState<{ store: StoreRow; action: "deactivate" | "archive" } | null>(null);
+  const [setupStore, setSetupStore] = useState<StoreRow | null>(null);
+  const [postCreatePrompt, setPostCreatePrompt] = useState<StoreRow | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -177,16 +180,20 @@ export function StoresPanel() {
       status: form.status || "active",
     };
     let res;
+    let createdRow: StoreRow | null = null;
     if (editing) {
       res = await supabase.from("stores").update(payload).eq("id", editing.id);
     } else {
-      res = await supabase.from("stores").insert(payload);
+      const insertRes = await supabase.from("stores").insert(payload).select("*").maybeSingle();
+      res = insertRes;
+      createdRow = (insertRes.data as StoreRow) ?? null;
     }
     setSaving(false);
     if (res.error) { toast.error("فشل الحفظ: " + res.error.message); return; }
     toast.success(editing ? "تم تحديث المتجر" : "تم إنشاء المتجر");
     setDialogOpen(false);
     load();
+    if (!editing && createdRow) setPostCreatePrompt(createdRow);
   };
 
   const setStatus = async (s: StoreRow, status: string) => {
@@ -292,6 +299,7 @@ export function StoresPanel() {
                   <TableCell>
                     <div className="flex gap-1 flex-wrap">
                       <Button size="sm" variant="outline" onClick={() => openEdit(s)} className="gap-1"><Pencil className="h-3.5 w-3.5" />تعديل</Button>
+                      <Button size="sm" variant="default" onClick={() => setSetupStore(s)} className="gap-1"><Wand2 className="h-3.5 w-3.5" />إعداد</Button>
                       {s.status !== "active" ? (
                         <Button size="sm" variant="outline" onClick={() => activate(s)} className="gap-1"><Power className="h-3.5 w-3.5" />تفعيل</Button>
                       ) : (
@@ -376,6 +384,33 @@ export function StoresPanel() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Post-create prompt: offer to open the setup wizard */}
+      <AlertDialog open={!!postCreatePrompt} onOpenChange={(o) => !o && setPostCreatePrompt(null)}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>تم إنشاء المتجر</AlertDialogTitle>
+            <AlertDialogDescription>
+              هل تريد بدء معالج الإعداد لمتجر "{postCreatePrompt?.name}" الآن؟ يمكنك تعيين مدير، مناطق التوصيل، الفئات والمنتجات.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>لاحقاً</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (postCreatePrompt) setSetupStore(postCreatePrompt); setPostCreatePrompt(null); }}>
+              بدء الإعداد
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {setupStore && (
+        <StoreSetupWizard
+          open={!!setupStore}
+          storeId={setupStore.id}
+          storeName={setupStore.name}
+          onClose={() => { setSetupStore(null); load(); }}
+        />
+      )}
     </div>
   );
 }
