@@ -400,6 +400,7 @@ export type Database = {
           manage_orders: boolean
           manage_pricing: boolean
           manage_products: boolean
+          permissions: Json
           updated_at: string
           user_id: string
           view_reports: boolean
@@ -411,6 +412,7 @@ export type Database = {
           manage_orders?: boolean
           manage_pricing?: boolean
           manage_products?: boolean
+          permissions?: Json
           updated_at?: string
           user_id: string
           view_reports?: boolean
@@ -422,6 +424,7 @@ export type Database = {
           manage_orders?: boolean
           manage_pricing?: boolean
           manage_products?: boolean
+          permissions?: Json
           updated_at?: string
           user_id?: string
           view_reports?: boolean
@@ -511,6 +514,7 @@ export type Database = {
           currency: string | null
           delivery_enabled: boolean | null
           free_delivery_over: number | null
+          icon_url: string | null
           id: string
           is_open: boolean | null
           latitude: number | null
@@ -536,6 +540,7 @@ export type Database = {
           currency?: string | null
           delivery_enabled?: boolean | null
           free_delivery_over?: number | null
+          icon_url?: string | null
           id?: string
           is_open?: boolean | null
           latitude?: number | null
@@ -561,6 +566,7 @@ export type Database = {
           currency?: string | null
           delivery_enabled?: boolean | null
           free_delivery_over?: number | null
+          icon_url?: string | null
           id?: string
           is_open?: boolean | null
           latitude?: number | null
@@ -616,6 +622,7 @@ export type Database = {
         }[]
       }
       auth_store_id: { Args: never; Returns: string }
+      can_manage_user: { Args: { _target: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -624,10 +631,19 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_accountant: { Args: { _user_id: string }; Returns: boolean }
+      is_store_admin_of: { Args: { _store: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "driver" | "accountant"
+      app_role:
+        | "admin"
+        | "driver"
+        | "accountant"
+        | "super_admin"
+        | "store_admin"
+        | "employee"
+        | "cashier"
+        | "inventory_manager"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -755,7 +771,16 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "driver", "accountant"],
+      app_role: [
+        "admin",
+        "driver",
+        "accountant",
+        "super_admin",
+        "store_admin",
+        "employee",
+        "cashier",
+        "inventory_manager",
+      ],
     },
   },
 } as const

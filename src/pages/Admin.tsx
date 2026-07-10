@@ -46,6 +46,7 @@ import { useStaffPermissions } from "@/hooks/useStaffPermissions";
 import { PermissionsDialog } from "@/components/PermissionsDialog";
 import { LoyaltyPanel } from "@/components/loyalty/LoyaltyPanel";
 import { StoresPanel } from "@/components/StoresPanel";
+import { UsersPanel } from "@/components/users/UsersPanel";
 
 interface Order {
   id: string;
@@ -820,6 +821,7 @@ const Admin = () => {
             {isSuperAdmin && (
               <TabsTrigger value="stores" className="gap-1"><Store className="h-3.5 w-3.5" />المتاجر</TabsTrigger>
             )}
+            <TabsTrigger value="users" className="gap-1"><Users className="h-3.5 w-3.5" />المستخدمون</TabsTrigger>
           </TabsList>
 
           <TabsContent value="orders" className="mt-4">
@@ -1037,6 +1039,9 @@ const Admin = () => {
               <StoresPanel />
             </TabsContent>
           )}
+          <TabsContent value="users" className="mt-4">
+            <UsersPanel />
+          </TabsContent>
         </Tabs>
       </main>
     </div>

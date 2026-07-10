@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Store as StoreIcon, Plus, Pencil, Power, PowerOff, Archive, Wand2 } from "lucide-react";
 import { StoreSetupWizard } from "@/components/store-setup/StoreSetupWizard";
+import { BrandingUploader } from "@/components/store-branding/BrandingUploader";
 
 interface StoreRow {
   id: string;
@@ -29,6 +30,7 @@ interface StoreRow {
   slug: string;
   logo_url: string | null;
   cover_url: string | null;
+  icon_url: string | null;
   primary_color: string | null;
   secondary_color: string | null;
   phone: string | null;
@@ -71,6 +73,7 @@ const emptyForm = (): Partial<StoreRow> => ({
   slug: "",
   logo_url: "",
   cover_url: "",
+  icon_url: "",
   primary_color: "",
   secondary_color: "",
   phone: "",
@@ -163,6 +166,7 @@ export function StoresPanel() {
       slug: form.slug!.trim().toLowerCase(),
       logo_url: form.logo_url || null,
       cover_url: form.cover_url || null,
+      icon_url: form.icon_url || null,
       primary_color: form.primary_color || null,
       secondary_color: form.secondary_color || null,
       phone: form.phone || null,
@@ -325,8 +329,14 @@ export function StoresPanel() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field label="اسم المتجر *"><Input value={form.name ?? ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
             <Field label="المعرّف (slug) *"><Input value={form.slug ?? ""} onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase() })} placeholder="fresh-market" /></Field>
-            <Field label="رابط الشعار"><Input value={form.logo_url ?? ""} onChange={(e) => setForm({ ...form, logo_url: e.target.value })} /></Field>
-            <Field label="رابط الغلاف"><Input value={form.cover_url ?? ""} onChange={(e) => setForm({ ...form, cover_url: e.target.value })} /></Field>
+            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 p-3 border rounded-md bg-muted/30">
+              <BrandingUploader storeId={editing?.id ?? null} kind="logo" value={form.logo_url} onChange={(url) => setForm({ ...form, logo_url: url ?? "" })} />
+              <BrandingUploader storeId={editing?.id ?? null} kind="cover" value={form.cover_url} onChange={(url) => setForm({ ...form, cover_url: url ?? "" })} />
+              <BrandingUploader storeId={editing?.id ?? null} kind="icon" value={form.icon_url} onChange={(url) => setForm({ ...form, icon_url: url ?? "" })} />
+            </div>
+            <Field label="رابط الشعار (يدوي)"><Input value={form.logo_url ?? ""} onChange={(e) => setForm({ ...form, logo_url: e.target.value })} /></Field>
+            <Field label="رابط الغلاف (يدوي)"><Input value={form.cover_url ?? ""} onChange={(e) => setForm({ ...form, cover_url: e.target.value })} /></Field>
+            <Field label="رابط الأيقونة (يدوي)"><Input value={form.icon_url ?? ""} onChange={(e) => setForm({ ...form, icon_url: e.target.value })} /></Field>
             <Field label="اللون الأساسي"><Input value={form.primary_color ?? ""} onChange={(e) => setForm({ ...form, primary_color: e.target.value })} placeholder="#22c55e" /></Field>
             <Field label="اللون الثانوي"><Input value={form.secondary_color ?? ""} onChange={(e) => setForm({ ...form, secondary_color: e.target.value })} placeholder="#0ea5e9" /></Field>
             <Field label="الهاتف"><Input value={form.phone ?? ""} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></Field>

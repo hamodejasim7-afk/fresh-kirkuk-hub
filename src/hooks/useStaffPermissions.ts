@@ -20,40 +20,49 @@ export const DEFAULT_PERMISSIONS: StaffPermissions = {
   view_reports: true,
 };
 
+const NO_PERMISSIONS: StaffPermissions = {
+  manage_orders: false,
+  manage_pricing: false,
+  manage_products: false,
+  manage_categories: false,
+  manage_drivers: false,
+  view_reports: false,
+};
+
 /**
  * Returns granular permissions for the current user.
- * - admin: always all true (bypass)
- * - accountant: reads from staff_permissions row; if missing, defaults to all true
- * - other: all false
+ * - super_admin / store_admin / legacy admin: all true (backend still enforces via RLS)
+ * - accountant: reads staff_permissions; legacy booleans + JSONB extras
+ * - other roles: nothing
  *
- * Updates in real time when an admin changes permissions.
+ * Live-updates when an admin changes permissions.
  */
-export const useStaffPermissions = (): { perms: StaffPermissions; loading: boolean } => {
-  const { user, role } = useAuth();
+export const useStaffPermissions = (): {
+  perms: StaffPermissions;
+  extra: Record<string, boolean>;
+  loading: boolean;
+} => {
+  const { user, role, isSuperAdmin, isStoreAdmin } = useAuth();
   const [perms, setPerms] = useState<StaffPermissions>(DEFAULT_PERMISSIONS);
+  const [extra, setExtra] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) {
       setPerms(DEFAULT_PERMISSIONS);
+      setExtra({});
       setLoading(false);
       return;
     }
-    if (role === "admin") {
+    if (isSuperAdmin || isStoreAdmin || role === "admin") {
       setPerms(DEFAULT_PERMISSIONS);
+      setExtra({});
       setLoading(false);
       return;
     }
     if (role !== "accountant") {
-      // drivers and others have no admin perms
-      setPerms({
-        manage_orders: false,
-        manage_pricing: false,
-        manage_products: false,
-        manage_categories: false,
-        manage_drivers: false,
-        view_reports: false,
-      });
+      setPerms(NO_PERMISSIONS);
+      setExtra({});
       setLoading(false);
       return;
     }
@@ -62,12 +71,22 @@ export const useStaffPermissions = (): { perms: StaffPermissions; loading: boole
     const fetchPerms = async () => {
       const { data } = await supabase
         .from("staff_permissions")
-        .select("manage_orders, manage_pricing, manage_products, manage_categories, manage_drivers, view_reports")
+        .select(
+          "manage_orders, manage_pricing, manage_products, manage_categories, manage_drivers, view_reports, permissions",
+        )
         .eq("user_id", user.id)
         .maybeSingle();
       if (!active) return;
-      if (data) setPerms(data as StaffPermissions);
-      else setPerms(DEFAULT_PERMISSIONS);
+      if (data) {
+        const { permissions, ...booleans } = data as StaffPermissions & {
+          permissions: Record<string, boolean> | null;
+        };
+        setPerms(booleans as StaffPermissions);
+        setExtra(permissions ?? {});
+      } else {
+        setPerms(DEFAULT_PERMISSIONS);
+        setExtra({});
+      }
       setLoading(false);
     };
     fetchPerms();
@@ -85,7 +104,7 @@ export const useStaffPermissions = (): { perms: StaffPermissions; loading: boole
       active = false;
       supabase.removeChannel(channel);
     };
-  }, [user, role]);
+  }, [user, role, isSuperAdmin, isStoreAdmin]);
 
-  return { perms, loading };
+  return { perms, extra, loading };
 };
