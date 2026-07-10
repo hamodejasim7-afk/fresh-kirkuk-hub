@@ -20,7 +20,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Store as StoreIcon, Plus, Pencil, Power, PowerOff, Archive } from "lucide-react";
+import { Store as StoreIcon, Plus, Pencil, Power, PowerOff, Archive, Wand2 } from "lucide-react";
+import { StoreSetupWizard } from "@/components/store-setup/StoreSetupWizard";
 
 interface StoreRow {
   id: string;
