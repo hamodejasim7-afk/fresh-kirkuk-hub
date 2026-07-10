@@ -384,6 +384,33 @@ export function StoresPanel() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Post-create prompt: offer to open the setup wizard */}
+      <AlertDialog open={!!postCreatePrompt} onOpenChange={(o) => !o && setPostCreatePrompt(null)}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>تم إنشاء المتجر</AlertDialogTitle>
+            <AlertDialogDescription>
+              هل تريد بدء معالج الإعداد لمتجر "{postCreatePrompt?.name}" الآن؟ يمكنك تعيين مدير، مناطق التوصيل، الفئات والمنتجات.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>لاحقاً</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (postCreatePrompt) setSetupStore(postCreatePrompt); setPostCreatePrompt(null); }}>
+              بدء الإعداد
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {setupStore && (
+        <StoreSetupWizard
+          open={!!setupStore}
+          storeId={setupStore.id}
+          storeName={setupStore.name}
+          onClose={() => { setSetupStore(null); load(); }}
+        />
+      )}
     </div>
   );
 }
