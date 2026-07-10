@@ -357,7 +357,7 @@ const Admin = () => {
       document.removeEventListener("visibilitychange", onVisible);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [effectiveStoreId]);
 
   // Detect newly arrived orders → beep + browser notification + toast (smooth, no full reload)
   useEffect(() => {
