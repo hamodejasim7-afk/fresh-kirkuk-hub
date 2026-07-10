@@ -101,6 +101,8 @@ export function StoresPanel() {
   const [saving, setSaving] = useState(false);
 
   const [confirm, setConfirm] = useState<{ store: StoreRow; action: "deactivate" | "archive" } | null>(null);
+  const [setupStore, setSetupStore] = useState<StoreRow | null>(null);
+  const [postCreatePrompt, setPostCreatePrompt] = useState<StoreRow | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
