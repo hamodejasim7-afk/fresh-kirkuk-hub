@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useStore } from "@/contexts/StoreContext";
 import { formatIQD } from "@/lib/format";
 import { toast } from "sonner";
 import {
@@ -111,14 +112,16 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
 };
 
 const Admin = () => {
-  const { signOut, user, role } = useAuth();
+  const { signOut, user, role, isSuperAdmin, storeId: pinnedStoreId } = useAuth();
   const isAdmin = role === "admin";
   const { perms } = useStaffPermissions();
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  useEffect(() => {
-    if (!user) { setIsSuperAdmin(false); return; }
-    supabase.rpc("is_super_admin").then(({ data }) => setIsSuperAdmin(!!data));
-  }, [user]);
+  const { currentStore } = useStore();
+  // Effective tenant scope for every panel: super admin uses the currently
+  // selected store from StoreContext (null = "all stores" fallback for legacy
+  // views); store users are always pinned to their profile.store_id.
+  const effectiveStoreId: string | null = isSuperAdmin
+    ? (currentStore?.id ?? null)
+    : (pinnedStoreId ?? null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [items, setItems] = useState<Record<string, OrderItem[]>>({});
   const [archivedOrders, setArchivedOrders] = useState<Order[]>([]);
@@ -202,12 +205,16 @@ const Admin = () => {
   const loadData = async (opts?: { silent?: boolean }) => {
     if (!opts?.silent) setLoading(true);
 
-    // Active orders only (not archived)
-    const { data: ordersData, error: ordersErr } = await supabase
+    // Active orders only (not archived). Scope to effective store when set so
+    // super admin viewing a specific store gets only that store's orders; RLS
+    // already restricts every non-super-admin caller to their own store.
+    let ordersQuery = supabase
       .from("orders")
       .select("*")
       .is("archived_at", null)
       .order("created_at", { ascending: false });
+    if (effectiveStoreId) ordersQuery = ordersQuery.eq("store_id", effectiveStoreId);
+    const { data: ordersData, error: ordersErr } = await ordersQuery;
 
     if (ordersErr) {
       if (!opts?.silent) toast.error("فشل تحميل الطلبات");
@@ -350,7 +357,7 @@ const Admin = () => {
       document.removeEventListener("visibilitychange", onVisible);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [effectiveStoreId]);
 
   // Detect newly arrived orders → beep + browser notification + toast (smooth, no full reload)
   useEffect(() => {
@@ -453,12 +460,14 @@ const Admin = () => {
   };
 
   const loadArchive = async () => {
-    const { data: ordersData, error } = await supabase
+    let archiveQuery = supabase
       .from("orders")
       .select("*")
       .not("archived_at", "is", null)
       .order("archived_at", { ascending: false })
       .limit(500);
+    if (effectiveStoreId) archiveQuery = archiveQuery.eq("store_id", effectiveStoreId);
+    const { data: ordersData, error } = await archiveQuery;
     if (error) {
       toast.error("فشل تحميل الأرشيف");
       return;
@@ -937,7 +946,7 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="pricing" className="mt-4">
-            <PricingPanel />
+            <PricingPanel storeId={effectiveStoreId} />
           </TabsContent>
 
           <TabsContent value="delivery-zones" className="mt-4">
@@ -948,11 +957,11 @@ const Admin = () => {
             {(role?.trim().toLowerCase() === "admin" || role?.trim().toLowerCase() === "accountant") && (
               <BulkPriceUpdate />
             )}
-            <ProductsPanel />
+            <ProductsPanel storeId={effectiveStoreId} />
           </TabsContent>
 
           <TabsContent value="categories" className="mt-4">
-            <CategoriesPanel />
+            <CategoriesPanel storeId={effectiveStoreId} />
           </TabsContent>
 
           <TabsContent value="archive" className="mt-4">
@@ -1032,7 +1041,7 @@ const Admin = () => {
             <DriversPanel drivers={drivers} reload={loadData} />
           </TabsContent>
           <TabsContent value="loyalty" className="mt-4">
-            <LoyaltyPanel />
+            <LoyaltyPanel storeId={effectiveStoreId} />
           </TabsContent>
           {isSuperAdmin && (
             <TabsContent value="stores" className="mt-4">

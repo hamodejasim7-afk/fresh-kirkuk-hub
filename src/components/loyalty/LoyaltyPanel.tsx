@@ -35,8 +35,8 @@ import { QRScanner } from "@/components/loyalty/QRScanner";
 import { useAuth } from "@/contexts/AuthContext";
 
 
-export function LoyaltyPanel() {
-  const { customers, loading, reload } = useCustomers();
+export function LoyaltyPanel({ storeId }: { storeId?: string | null } = {}) {
+  const { customers, loading, reload } = useCustomers({ storeId });
   const { user } = useAuth();
   const [tab, setTab] = useState("new");
 

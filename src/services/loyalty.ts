@@ -1,5 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import { DEFAULT_STORE_ID } from "@/config/constants";
 import type { Customer } from "@/types/loyalty";
 
 /** Resolve the current user's store_id from their profile. */
@@ -130,10 +129,13 @@ export async function registerLoyaltyOrder(customer: Customer, userId: string | 
     throw new Error("يجب تسجيل الدخول لتسجيل طلبية ولاء");
   }
 
-  // Tag the loyalty order to the staff member's store so store-scoped RLS
-  // reads (store_id = auth_store_id()) return it in that store's dashboard.
-  // Falls back to DEFAULT_STORE_ID only when the caller has no assigned store.
-  const authStoreId = (await resolveAuthStoreId()) ?? DEFAULT_STORE_ID;
+  // Tenant-safe: always tag the loyalty order to the staff member's store.
+  // Refuse to create the order if the caller has no assigned store — falling
+  // back to a hardcoded default would leak the order into the wrong tenant.
+  const authStoreId = await resolveAuthStoreId();
+  if (!authStoreId) {
+    throw new Error("لا يمكن تسجيل طلبية ولاء بدون متجر معيّن للمستخدم");
+  }
 
   const { data, error } = await supabase
     .from("orders")

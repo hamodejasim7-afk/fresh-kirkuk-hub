@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { DEFAULT_STORE_ID } from "@/config/constants";
 import { useProducts } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
 import { Button } from "@/components/ui/button";
@@ -23,9 +22,9 @@ import { formatIQD } from "@/lib/format";
 
 const UNITS = ["كغم", "حبة", "ربطة", "علبة", "لتر"];
 
-export const PricingPanel = () => {
-  const { products, reload: reloadProducts } = useProducts();
-  const { categories } = useCategories({ onlyActive: true });
+export const PricingPanel = ({ storeId }: { storeId?: string | null } = {}) => {
+  const { products, reload: reloadProducts } = useProducts({ storeId });
+  const { categories } = useCategories({ onlyActive: true, storeId });
 
   // Local edited prices: id -> string
   const [edits, setEdits] = useState<Record<string, string>>({});
@@ -106,6 +105,7 @@ export const PricingPanel = () => {
     if (!newP.category) return toast.error("اختر الفئة");
     const price = Number(newP.price_iqd);
     if (!Number.isFinite(price) || price < 0) return toast.error("السعر غير صالح");
+    if (!storeId) return toast.error("اختر متجراً أولاً قبل إضافة منتج");
     setAdding(true);
     const { error } = await supabase.from("products").insert({
       name: newP.name.trim(),
@@ -115,7 +115,7 @@ export const PricingPanel = () => {
       emoji: newP.emoji.trim() || null,
       is_available: true,
       sort_order: products.length + 1,
-      store_id: DEFAULT_STORE_ID,
+      store_id: storeId,
     });
     setAdding(false);
     if (error) return toast.error("فشل الإضافة: " + error.message);

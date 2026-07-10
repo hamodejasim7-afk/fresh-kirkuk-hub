@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { DEFAULT_STORE_ID } from "@/config/constants";
 import { useCategories, type Category } from "@/hooks/useCategories";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +16,7 @@ import {
 import { Plus, Pencil, Trash2, Tag } from "lucide-react";
 import { toast } from "sonner";
 
-export const CategoriesPanel = ({ storeId }: { storeId?: string } = {}) => {
+export const CategoriesPanel = ({ storeId }: { storeId?: string | null } = {}) => {
   const { categories, loading, reload } = useCategories({ storeId });
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
@@ -37,12 +36,13 @@ export const CategoriesPanel = ({ storeId }: { storeId?: string } = {}) => {
 
   const save = async () => {
     if (!form.name.trim()) return toast.error("اسم الفئة مطلوب");
+    if (!storeId) return toast.error("اختر متجراً أولاً قبل إضافة فئة");
     setSaving(true);
     const payload = {
       name: form.name.trim(),
       sort_order: Number(form.sort_order) || 0,
       is_active: form.is_active,
-      store_id: storeId ?? DEFAULT_STORE_ID,
+      store_id: storeId,
     };
     const { error } = editing
       ? await supabase.from("categories").update(payload).eq("id", editing.id)
