@@ -1039,6 +1039,9 @@ const Admin = () => {
               <StoresPanel />
             </TabsContent>
           )}
+          <TabsContent value="users" className="mt-4">
+            <UsersPanel />
+          </TabsContent>
         </Tabs>
       </main>
     </div>
