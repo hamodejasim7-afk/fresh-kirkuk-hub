@@ -12,6 +12,8 @@ import type { Customer } from "@/types/loyalty";
 import { LoyaltyCardView } from "@/components/loyalty/LoyaltyCardView";
 import { toast } from "sonner";
 import freshLogo from "@/assets/fresh-logo.png";
+import { useStoreBranding } from "@/hooks/useStoreBranding";
+
 
 export default function LoyaltyCardPage() {
   const { qr, phone: phoneParam } = useParams<{ qr?: string; phone?: string }>();
@@ -55,16 +57,21 @@ export default function LoyaltyCardPage() {
     } finally { setLoading(false); }
   };
 
+  const { branding } = useStoreBranding(customer?.store_id ?? null);
+  const headerLogo = branding?.logo_url || freshLogo;
+  const headerName = branding?.name || "فريش";
+
   return (
     <div className="min-h-screen bg-[var(--gradient-soft)]" dir="rtl">
       <div className="max-w-md mx-auto px-4 py-6 space-y-4">
         <div className="flex items-center gap-2">
           <Button asChild variant="ghost" size="sm"><Link to="/"><ArrowRight className="h-4 w-4" /> رجوع</Link></Button>
           <div className="flex items-center gap-2 mr-auto">
-            <img src={freshLogo} alt="فريش" className="h-8 w-8" />
-            <span className="font-extrabold">فريش</span>
+            <img src={headerLogo} alt={headerName} className="h-8 w-8 object-contain" />
+            <span className="font-extrabold">{headerName}</span>
           </div>
         </div>
+
 
         {loading && <Skeleton className="h-96 w-full rounded-3xl" />}
 

@@ -9,6 +9,8 @@ import type { Customer } from "@/types/loyalty";
 import { STAMPS_PER_GIFT } from "@/types/loyalty";
 import { cn } from "@/lib/utils";
 import { buildCardUrl } from "@/config/constants";
+import { useStoreBranding } from "@/hooks/useStoreBranding";
+
 
 interface Props {
   customer: Customer;
@@ -19,6 +21,10 @@ export function LoyaltyCardView({ customer, compact }: Props) {
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const prevStamps = useRef<number>(customer.total_stamps);
   const [celebrate, setCelebrate] = useState(false);
+  const { branding } = useStoreBranding(customer.store_id);
+  const logo = branding?.logo_url || freshLogo;
+  const storeName = branding?.name || "فريش Fresh";
+
 
   useEffect(() => {
     const payload = buildCardUrl(customer.phone);
@@ -64,13 +70,14 @@ export function LoyaltyCardView({ customer, compact }: Props) {
 
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <img src={freshLogo} alt="فريش" className="h-12 w-12 rounded-2xl bg-white/95 p-1.5 shadow-md" />
+          <img src={logo} alt={storeName} className="h-12 w-12 rounded-2xl bg-white/95 p-1.5 shadow-md object-contain" />
           <div>
             <p className="text-xs opacity-80">بطاقة الولاء</p>
-            <p className="font-extrabold text-lg leading-tight">فريش Fresh</p>
+            <p className="font-extrabold text-lg leading-tight">{storeName}</p>
           </div>
         </div>
         <Badge variant="secondary" className="bg-white/20 border-0 text-white gap-1 backdrop-blur">
+
           <Gift className="h-3.5 w-3.5" /> {customer.gift_count} هدية
         </Badge>
       </div>

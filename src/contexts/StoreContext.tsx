@@ -51,7 +51,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     const { data } = await supabase
       .from("stores")
-      .select("id, name, slug, address, logo_url, is_open, status, sort_order")
+      .select("id, name, slug, address, logo_url, cover_url, icon_url, is_open, status, sort_order")
       .eq("status", "active")
       .order("sort_order", { ascending: true, nullsFirst: false })
       .order("name", { ascending: true });

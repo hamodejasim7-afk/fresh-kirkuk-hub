@@ -378,7 +378,7 @@ ${itemsList}
       <header className="sticky top-0 z-40 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
         <div className="container mx-auto flex items-center justify-between gap-4 px-4 py-3">
           <div className="flex items-center gap-3">
-            <img src={freshLogo} alt="شعار فريش Fresh - متجر كركوك" className="h-12 w-auto md:h-14" />
+            <img src={currentStore?.logo_url || freshLogo} alt={`شعار ${currentStore?.name ?? "فريش Fresh"}`} className="h-12 w-auto md:h-14 object-contain" />
             <div className="hidden sm:block">
               <p className="text-xs text-muted-foreground">توصيل طازج إلى باب بيتك</p>
               <a href={`tel:${STORE_PHONE_TEL}`} className="text-sm font-semibold text-secondary hover:text-primary block" dir="ltr">
