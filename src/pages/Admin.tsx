@@ -111,14 +111,16 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
 };
 
 const Admin = () => {
-  const { signOut, user, role } = useAuth();
+  const { signOut, user, role, isSuperAdmin, storeId: pinnedStoreId } = useAuth();
   const isAdmin = role === "admin";
   const { perms } = useStaffPermissions();
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  useEffect(() => {
-    if (!user) { setIsSuperAdmin(false); return; }
-    supabase.rpc("is_super_admin").then(({ data }) => setIsSuperAdmin(!!data));
-  }, [user]);
+  const { currentStore } = useStore();
+  // Effective tenant scope for every panel: super admin uses the currently
+  // selected store from StoreContext (null = "all stores" fallback for legacy
+  // views); store users are always pinned to their profile.store_id.
+  const effectiveStoreId: string | null = isSuperAdmin
+    ? (currentStore?.id ?? null)
+    : (pinnedStoreId ?? null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [items, setItems] = useState<Record<string, OrderItem[]>>({});
   const [archivedOrders, setArchivedOrders] = useState<Order[]>([]);
@@ -937,7 +939,7 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="pricing" className="mt-4">
-            <PricingPanel />
+            <PricingPanel storeId={effectiveStoreId} />
           </TabsContent>
 
           <TabsContent value="delivery-zones" className="mt-4">
@@ -948,11 +950,11 @@ const Admin = () => {
             {(role?.trim().toLowerCase() === "admin" || role?.trim().toLowerCase() === "accountant") && (
               <BulkPriceUpdate />
             )}
-            <ProductsPanel />
+            <ProductsPanel storeId={effectiveStoreId} />
           </TabsContent>
 
           <TabsContent value="categories" className="mt-4">
-            <CategoriesPanel />
+            <CategoriesPanel storeId={effectiveStoreId} />
           </TabsContent>
 
           <TabsContent value="archive" className="mt-4">
@@ -1032,7 +1034,7 @@ const Admin = () => {
             <DriversPanel drivers={drivers} reload={loadData} />
           </TabsContent>
           <TabsContent value="loyalty" className="mt-4">
-            <LoyaltyPanel />
+            <LoyaltyPanel storeId={effectiveStoreId} />
           </TabsContent>
           {isSuperAdmin && (
             <TabsContent value="stores" className="mt-4">
