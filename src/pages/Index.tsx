@@ -371,9 +371,6 @@ ${itemsList}
       </div>
     );
   }
-  if (!currentStore) {
-    return <StoreSelector />;
-  }
 
   return (
     <div dir="rtl" className="min-h-screen bg-background">
