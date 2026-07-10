@@ -126,7 +126,7 @@ export const ProductsPanel = ({ storeId }: { storeId?: string | null } = {}) => 
     if (!editing && storeId) payload.store_id = storeId;
 
     const { error } = editing
-      ? await supabase.from("products").update(payload).eq("id", editing.id)
+      ? await supabase.from("products").update(payload as any).eq("id", editing.id)
       : await supabase.from("products").insert(payload as any);
 
     setSaving(false);
