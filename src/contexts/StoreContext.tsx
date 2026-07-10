@@ -3,6 +3,7 @@ import {
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Store } from "@/hooks/useStores";
+import { useAuth } from "@/contexts/AuthContext";
 
 const STORAGE_KEY = "fresh:selectedStoreId";
 
@@ -16,6 +17,8 @@ interface StoreCtx {
   isSelectorOpen: boolean;
   openSelector: () => void;
   closeSelector: () => void;
+  /** True when the caller is allowed to change stores (super admin or unauthenticated customer). */
+  canSwitchStore: boolean;
 }
 
 const StoreContext = createContext<StoreCtx>({
@@ -28,15 +31,21 @@ const StoreContext = createContext<StoreCtx>({
   isSelectorOpen: false,
   openSelector: () => {},
   closeSelector: () => {},
+  canSwitchStore: true,
 });
 
 export const StoreProvider = ({ children }: { children: ReactNode }) => {
+  const { user, isSuperAdmin, storeId: assignedStoreId, loading: authLoading } = useAuth();
   const [activeStores, setActiveStores] = useState<Store[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(() => {
     try { return localStorage.getItem(STORAGE_KEY); } catch { return null; }
   });
   const [loading, setLoading] = useState(true);
   const [isSelectorOpen, setSelectorOpen] = useState(false);
+
+  // Store users (any authenticated non-super-admin) are locked to their profile.store_id.
+  const isPinnedStoreUser = !!user && !isSuperAdmin && !!assignedStoreId;
+  const canSwitchStore = !isPinnedStoreUser;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -49,7 +58,6 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     const rows = (data ?? []) as Store[];
     setActiveStores(rows);
 
-    // Validate stored id; if invalid/missing → clear so the modal opens.
     setSelectedId((prev) => {
       if (prev && rows.some((s) => s.id === prev)) return prev;
       try { localStorage.removeItem(STORAGE_KEY); } catch {}
@@ -60,27 +68,42 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => { load(); }, [load]);
 
-  // Auto-open selector when there is no valid store selected.
+  // Force the pinned store for store users (overrides any localStorage value).
   useEffect(() => {
-    if (loading) return;
+    if (authLoading) return;
+    if (isPinnedStoreUser && assignedStoreId && selectedId !== assignedStoreId) {
+      try { localStorage.setItem(STORAGE_KEY, assignedStoreId); } catch {}
+      setSelectedId(assignedStoreId);
+      setSelectorOpen(false);
+    }
+  }, [authLoading, isPinnedStoreUser, assignedStoreId, selectedId]);
+
+  // Auto-open selector only for users allowed to switch stores.
+  useEffect(() => {
+    if (loading || authLoading) return;
+    if (!canSwitchStore) { setSelectorOpen(false); return; }
     if (!selectedId && activeStores.length > 0) setSelectorOpen(true);
     else if (selectedId) setSelectorOpen(false);
-  }, [loading, selectedId, activeStores.length]);
+  }, [loading, authLoading, canSwitchStore, selectedId, activeStores.length]);
 
   const selectStore = useCallback((id: string) => {
+    if (!canSwitchStore) return; // hard guard
     try { localStorage.setItem(STORAGE_KEY, id); } catch {}
     setSelectedId(id);
     setSelectorOpen(false);
-  }, []);
+  }, [canSwitchStore]);
 
   const clearStore = useCallback(() => {
+    if (!canSwitchStore) return;
     try { localStorage.removeItem(STORAGE_KEY); } catch {}
     setSelectedId(null);
-  }, []);
+  }, [canSwitchStore]);
 
-  const openSelector = useCallback(() => setSelectorOpen(true), []);
+  const openSelector = useCallback(() => {
+    if (!canSwitchStore) return;
+    setSelectorOpen(true);
+  }, [canSwitchStore]);
   const closeSelector = useCallback(() => {
-    // Only allow closing when a store is already selected.
     if (selectedId) setSelectorOpen(false);
   }, [selectedId]);
 
@@ -95,6 +118,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         currentStore, loading, activeStores,
         selectStore, clearStore, reload: load,
         isSelectorOpen, openSelector, closeSelector,
+        canSwitchStore,
       }}
     >
       {children}

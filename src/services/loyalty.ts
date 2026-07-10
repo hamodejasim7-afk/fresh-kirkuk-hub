@@ -2,6 +2,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_STORE_ID } from "@/config/constants";
 import type { Customer } from "@/types/loyalty";
 
+/** Resolve the current user's store_id from their profile. */
+async function resolveAuthStoreId(): Promise<string | null> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const uid = sessionData?.session?.user?.id;
+  if (!uid) return null;
+  const { data } = await supabase
+    .from("profiles").select("store_id").eq("id", uid).maybeSingle();
+  return (data as { store_id: string | null } | null)?.store_id ?? null;
+}
+
+
 const normalizePhone = (raw: string) => raw.replace(/[^\d]/g, "");
 
 export const validatePhone = (raw: string) => {
@@ -46,14 +57,29 @@ export async function createCustomer(input: {
   full_name: string;
   phone: string;
   area?: string | null;
+  store_id?: string | null;
 }): Promise<Customer> {
   const full_name = input.full_name.trim();
   const phone = normalizePhone(input.phone);
   if (full_name.length < 2) throw new Error("الاسم قصير جداً");
   if (!validatePhone(phone)) throw new Error("رقم الهاتف غير صالح");
+
+  // Auto-resolve store_id from the caller's profile when not provided,
+  // so RLS ("store users insert own store customers") accepts the row.
+  const storeId = input.store_id ?? (await resolveAuthStoreId());
+
+
+  const payload: {
+    full_name: string;
+    phone: string;
+    area: string | null;
+    store_id?: string;
+  } = { full_name, phone, area: input.area?.trim() || null };
+  if (storeId) payload.store_id = storeId;
+
   const { data, error } = await supabase
     .from("customers")
-    .insert({ full_name, phone, area: input.area?.trim() || null })
+    .insert(payload)
     .select("*")
     .single();
   if (error) {
@@ -62,6 +88,7 @@ export async function createCustomer(input: {
   }
   return data as Customer;
 }
+
 
 export async function updateCustomer(id: string, patch: Partial<Pick<Customer, "full_name" | "phone" | "area">>) {
   const clean: { full_name?: string; phone?: string; area?: string | null } = {};
@@ -103,6 +130,11 @@ export async function registerLoyaltyOrder(customer: Customer, userId: string | 
     throw new Error("يجب تسجيل الدخول لتسجيل طلبية ولاء");
   }
 
+  // Tag the loyalty order to the staff member's store so store-scoped RLS
+  // reads (store_id = auth_store_id()) return it in that store's dashboard.
+  // Falls back to DEFAULT_STORE_ID only when the caller has no assigned store.
+  const authStoreId = (await resolveAuthStoreId()) ?? DEFAULT_STORE_ID;
+
   const { data, error } = await supabase
     .from("orders")
     .insert({
@@ -115,10 +147,11 @@ export async function registerLoyaltyOrder(customer: Customer, userId: string | 
       delivery_fee_iqd: 0,
       created_by: uid,
       notes: "طلبية ولاء يدوية",
-      store_id: DEFAULT_STORE_ID,
+      store_id: authStoreId,
     })
     .select("id")
     .single();
+
   if (error) {
     console.error("[registerLoyaltyOrder] insert failed", error);
     throw new Error(error.message || "فشل تسجيل الطلبية");
