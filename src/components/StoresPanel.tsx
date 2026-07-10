@@ -180,16 +180,20 @@ export function StoresPanel() {
       status: form.status || "active",
     };
     let res;
+    let createdRow: StoreRow | null = null;
     if (editing) {
       res = await supabase.from("stores").update(payload).eq("id", editing.id);
     } else {
-      res = await supabase.from("stores").insert(payload);
+      const insertRes = await supabase.from("stores").insert(payload).select("*").maybeSingle();
+      res = insertRes;
+      createdRow = (insertRes.data as StoreRow) ?? null;
     }
     setSaving(false);
     if (res.error) { toast.error("فشل الحفظ: " + res.error.message); return; }
     toast.success(editing ? "تم تحديث المتجر" : "تم إنشاء المتجر");
     setDialogOpen(false);
     load();
+    if (!editing && createdRow) setPostCreatePrompt(createdRow);
   };
 
   const setStatus = async (s: StoreRow, status: string) => {
