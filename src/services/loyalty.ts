@@ -138,6 +138,11 @@ export async function registerLoyaltyOrder(customer: Customer, userId: string | 
     throw new Error("يجب تسجيل الدخول لتسجيل طلبية ولاء");
   }
 
+  // Tag the loyalty order to the staff member's store so store-scoped RLS
+  // reads (store_id = auth_store_id()) return it in that store's dashboard.
+  // Falls back to DEFAULT_STORE_ID only when the caller has no assigned store.
+  const authStoreId = (await resolveAuthStoreId()) ?? DEFAULT_STORE_ID;
+
   const { data, error } = await supabase
     .from("orders")
     .insert({
@@ -150,10 +155,11 @@ export async function registerLoyaltyOrder(customer: Customer, userId: string | 
       delivery_fee_iqd: 0,
       created_by: uid,
       notes: "طلبية ولاء يدوية",
-      store_id: DEFAULT_STORE_ID,
+      store_id: authStoreId,
     })
     .select("id")
     .single();
+
   if (error) {
     console.error("[registerLoyaltyOrder] insert failed", error);
     throw new Error(error.message || "فشل تسجيل الطلبية");
