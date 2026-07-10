@@ -66,16 +66,8 @@ export async function createCustomer(input: {
 
   // Auto-resolve store_id from the caller's profile when not provided,
   // so RLS ("store users insert own store customers") accepts the row.
-  let storeId = input.store_id ?? null;
-  if (!storeId) {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const uid = sessionData?.session?.user?.id;
-    if (uid) {
-      const { data: prof } = await supabase
-        .from("profiles").select("store_id").eq("id", uid).maybeSingle();
-      storeId = (prof as { store_id: string | null } | null)?.store_id ?? null;
-    }
-  }
+  const storeId = input.store_id ?? (await resolveAuthStoreId());
+
 
   const payload: {
     full_name: string;
