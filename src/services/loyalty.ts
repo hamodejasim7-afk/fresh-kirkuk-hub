@@ -2,6 +2,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_STORE_ID } from "@/config/constants";
 import type { Customer } from "@/types/loyalty";
 
+/** Resolve the current user's store_id from their profile. */
+async function resolveAuthStoreId(): Promise<string | null> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const uid = sessionData?.session?.user?.id;
+  if (!uid) return null;
+  const { data } = await supabase
+    .from("profiles").select("store_id").eq("id", uid).maybeSingle();
+  return (data as { store_id: string | null } | null)?.store_id ?? null;
+}
+
+
 const normalizePhone = (raw: string) => raw.replace(/[^\d]/g, "");
 
 export const validatePhone = (raw: string) => {
