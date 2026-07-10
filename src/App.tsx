@@ -69,6 +69,7 @@ const App = () => {
               <Route path="*" element={<NotFound />} />
             </Routes>
             <PWAInstallPrompt />
+            <StoreSelectorDialog />
             </StoreProvider>
           </AuthProvider>
         </BrowserRouter>
