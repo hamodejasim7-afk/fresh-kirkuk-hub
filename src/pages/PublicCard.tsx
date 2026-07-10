@@ -8,7 +8,9 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Customer } from "@/types/loyalty";
 import { STAMPS_PER_GIFT } from "@/types/loyalty";
 import freshLogo from "@/assets/fresh-logo.png";
+import { useStoreBranding } from "@/hooks/useStoreBranding";
 import { cn } from "@/lib/utils";
+
 
 const FREE_DELIVERY_AT = 10; // 10 stamps = free delivery gift
 
@@ -63,6 +65,9 @@ export default function PublicCard() {
 
   const stamps = customer.total_stamps;
   const remaining = Math.max(0, FREE_DELIVERY_AT - stamps);
+  const { branding } = useStoreBranding(customer.store_id);
+  const logo = branding?.logo_url || freshLogo;
+  const storeName = branding?.name || "فريش Fresh";
 
   return (
     <div className="min-h-screen bg-[var(--gradient-soft)] p-4" dir="rtl">
@@ -70,15 +75,16 @@ export default function PublicCard() {
         <Card className="relative overflow-hidden rounded-3xl border-0 shadow-[var(--shadow-elegant)] bg-gradient-to-br from-primary via-primary to-primary-glow text-primary-foreground p-6">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
-              <img src={freshLogo} alt="فريش" className="h-12 w-12 rounded-2xl bg-white/95 p-1.5 shadow-md" />
+              <img src={logo} alt={storeName} className="h-12 w-12 rounded-2xl bg-white/95 p-1.5 shadow-md object-contain" />
               <div>
                 <p className="text-xs opacity-80">بطاقة الولاء</p>
-                <p className="font-extrabold text-lg leading-tight">فريش Fresh</p>
+                <p className="font-extrabold text-lg leading-tight">{storeName}</p>
               </div>
             </div>
             <Badge variant="secondary" className="bg-white/20 border-0 text-white gap-1 backdrop-blur">
               <Gift className="h-3.5 w-3.5" /> {customer.gift_count} هدية
             </Badge>
+
           </div>
 
           <div className="mt-6">
