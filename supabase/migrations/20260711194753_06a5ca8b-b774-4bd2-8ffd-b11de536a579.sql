@@ -1,0 +1,1 @@
+CREATE POLICY "public read store-branding" ON storage.objects FOR SELECT USING (bucket_id = 'store-branding');
