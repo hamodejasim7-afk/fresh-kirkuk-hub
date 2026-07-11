@@ -873,7 +873,7 @@ ${itemsList}
           </div>
         </div>
         <div className="border-t border-white/10 py-4 text-center text-xs opacity-70">
-          © {new Date().getFullYear()} فريش Fresh - جميع الحقوق محفوظة
+          © {new Date().getFullYear()} {currentStore?.name ?? "فريش Fresh"} - جميع الحقوق محفوظة
         </div>
       </footer>
 
