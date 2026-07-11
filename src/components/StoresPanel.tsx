@@ -330,9 +330,9 @@ export function StoresPanel() {
             <Field label="اسم المتجر *"><Input value={form.name ?? ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
             <Field label="المعرّف (slug) *"><Input value={form.slug ?? ""} onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase() })} placeholder="fresh-market" /></Field>
             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 p-3 border rounded-md bg-muted/30">
-              <BrandingUploader storeId={editing?.id ?? null} kind="logo" value={form.logo_url} onChange={(url) => setForm({ ...form, logo_url: url ?? "" })} />
-              <BrandingUploader storeId={editing?.id ?? null} kind="cover" value={form.cover_url} onChange={(url) => setForm({ ...form, cover_url: url ?? "" })} />
-              <BrandingUploader storeId={editing?.id ?? null} kind="icon" value={form.icon_url} onChange={(url) => setForm({ ...form, icon_url: url ?? "" })} />
+              <BrandingUploader storeId={editing?.id ?? "_pending"} kind="logo" value={form.logo_url} onChange={(url) => setForm({ ...form, logo_url: url ?? "" })} />
+              <BrandingUploader storeId={editing?.id ?? "_pending"} kind="cover" value={form.cover_url} onChange={(url) => setForm({ ...form, cover_url: url ?? "" })} />
+              <BrandingUploader storeId={editing?.id ?? "_pending"} kind="icon" value={form.icon_url} onChange={(url) => setForm({ ...form, icon_url: url ?? "" })} />
             </div>
             <Field label="رابط الشعار (يدوي)"><Input value={form.logo_url ?? ""} onChange={(e) => setForm({ ...form, logo_url: e.target.value })} /></Field>
             <Field label="رابط الغلاف (يدوي)"><Input value={form.cover_url ?? ""} onChange={(e) => setForm({ ...form, cover_url: e.target.value })} /></Field>

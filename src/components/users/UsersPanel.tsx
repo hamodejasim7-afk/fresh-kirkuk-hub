@@ -58,13 +58,19 @@ export function UsersPanel() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    // Profiles are RLS-scoped: super_admin sees all, store_admin sees own-store.
-    const [{ data: profiles, error: pErr }, { data: rolesData }, { data: storesData }] =
-      await Promise.all([
-        supabase.from("profiles").select("id, full_name, phone, store_id"),
-        supabase.from("user_roles").select("user_id, role"),
-        supabase.from("stores").select("id, name"),
-      ]);
+    // Profiles are RLS-scoped: super_admin sees all, store_admin/accountant see own-store.
+    // Extra client-side filter as defense-in-depth for non-super callers.
+    let profilesQuery = supabase.from("profiles").select("id, full_name, phone, store_id");
+    if (!isSuperAdmin && callerStoreId) {
+      profilesQuery = profilesQuery.eq("store_id", callerStoreId);
+    }
+    const { data: profiles, error: pErr } = await profilesQuery;
+    const [{ data: rolesData }, { data: storesData }] = await Promise.all([
+      profiles && profiles.length > 0
+        ? supabase.from("user_roles").select("user_id, role").in("user_id", profiles.map((p) => p.id))
+        : Promise.resolve({ data: [] as { user_id: string; role: string }[] }),
+      supabase.from("stores").select("id, name"),
+    ]);
     if (pErr) {
       toast.error("فشل تحميل المستخدمين");
       setLoading(false);
@@ -88,7 +94,7 @@ export function UsersPanel() {
     }));
     setRows(rowsOut);
     setLoading(false);
-  }, []);
+  }, [isSuperAdmin, callerStoreId]);
 
   useEffect(() => { load(); }, [load]);
 
