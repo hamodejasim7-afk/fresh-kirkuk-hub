@@ -852,10 +852,14 @@ ${itemsList}
           </div>
           <div className="space-y-2">
             <h3 className="font-semibold">تواصل معنا</h3>
-            <a href={`tel:${STORE_PHONE_TEL}`} className="flex items-center gap-2 text-sm opacity-90 hover:opacity-100" dir="ltr">
-              <Phone className="h-4 w-4" /> {STORE_PHONE}
-            </a>
-            <p className="flex items-center gap-2 text-sm opacity-90"><MapPin className="h-4 w-4" /> {STORE_LOCATION}</p>
+            {currentStore?.phone && (
+              <a href={`tel:${currentStore.phone}`} className="flex items-center gap-2 text-sm opacity-90 hover:opacity-100" dir="ltr">
+                <Phone className="h-4 w-4" /> {currentStore.phone}
+              </a>
+            )}
+            {currentStore?.address && (
+              <p className="flex items-center gap-2 text-sm opacity-90"><MapPin className="h-4 w-4" /> {currentStore.address}</p>
+            )}
           </div>
           <div className="space-y-2">
             <h3 className="font-semibold">تابعنا</h3>
