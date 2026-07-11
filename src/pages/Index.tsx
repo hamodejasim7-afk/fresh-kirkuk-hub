@@ -847,7 +847,7 @@ ${itemsList}
       <footer className="border-t bg-secondary text-secondary-foreground">
         <div className="container mx-auto grid gap-6 px-4 py-10 md:grid-cols-3">
           <div className="space-y-3">
-            <img src={currentStore?.logo_url || freshLogo} alt={`شعار ${currentStore?.name ?? "فريش Fresh"}`} className="h-14 w-auto bg-white/95 rounded-lg p-2" />
+            <img src={currentStore?.logo_url || freshLogo} alt={`شعار ${currentStore?.name ?? "فريش Fresh"}`} className="h-14 w-auto bg-white/95 rounded-lg p-2" onError={(e) => { if (e.currentTarget.src !== freshLogo) e.currentTarget.src = freshLogo; }} />
             <p className="text-sm font-semibold opacity-90">{currentStore?.name ?? "فريش Fresh"}</p>
             {currentStore?.address && (
               <p className="text-xs opacity-80">{currentStore.address}</p>
