@@ -149,7 +149,7 @@ export function UsersPanel() {
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">الكل</SelectItem>
-                {Object.entries(ROLE_LABEL).map(([k, v]) => (
+                {Object.entries(ROLE_LABEL_AR).map(([k, v]) => (
                   <SelectItem key={k} value={k}>{v}</SelectItem>
                 ))}
               </SelectContent>
@@ -207,7 +207,7 @@ export function UsersPanel() {
                           ? <span className="text-xs text-muted-foreground">—</span>
                           : r.roles.map((role) => (
                               <Badge key={role} variant={ROLE_VARIANT[role] ?? "secondary"}>
-                                {ROLE_LABEL[role] ?? role}
+                                {ROLE_LABEL_AR[role] ?? role}
                               </Badge>
                             ))}
                       </div>
