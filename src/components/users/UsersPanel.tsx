@@ -94,7 +94,7 @@ export function UsersPanel() {
     }));
     setRows(rowsOut);
     setLoading(false);
-  }, []);
+  }, [isSuperAdmin, callerStoreId]);
 
   useEffect(() => { load(); }, [load]);
 
