@@ -669,7 +669,7 @@ ${itemsList}
         <div className="container mx-auto grid gap-6 px-4 py-10 md:grid-cols-2 md:items-center md:py-16">
           <div className="space-y-4 text-center md:text-right">
             <h1 className="text-3xl font-bold leading-tight text-secondary md:text-5xl">
-              فريش <span className="text-primary">Fresh</span><br />
+              {currentStore?.name ?? "فريش Fresh"}<br />
               طازج كل يوم إلى باب بيتك
             </h1>
             <p className="text-base text-muted-foreground md:text-lg">
