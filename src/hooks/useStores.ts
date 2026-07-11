@@ -12,6 +12,8 @@ export interface Store {
   is_open: boolean | null;
   status: string;
   sort_order: number | null;
+  phone: string | null;
+  whatsapp: string | null;
 }
 
 export function useStores(opts: { onlyActive?: boolean } = {}) {
@@ -23,7 +25,7 @@ export function useStores(opts: { onlyActive?: boolean } = {}) {
     setLoading(true);
     let q = supabase
       .from("stores")
-      .select("id, name, slug, address, logo_url, cover_url, icon_url, is_open, status, sort_order")
+      .select("id, name, slug, address, logo_url, cover_url, icon_url, is_open, status, sort_order, phone, whatsapp")
       .order("sort_order", { ascending: true, nullsFirst: false })
       .order("name", { ascending: true });
 
