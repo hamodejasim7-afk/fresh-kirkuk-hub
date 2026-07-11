@@ -28,7 +28,8 @@ import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { useProducts, type DBProduct } from "@/hooks/useProducts";
 import { orderCustomerSchema } from "@/lib/orderValidation";
 import { useCategories } from "@/hooks/useCategories";
-import { DELIVERY_FEE_IQD, STORE_PHONE, STORE_PHONE_TEL, STORE_LOCATION } from "@/lib/constants";
+import { DELIVERY_FEE_IQD } from "@/lib/constants";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useDeliveryZones } from "@/hooks/useDeliveryZones";
 
@@ -220,7 +221,7 @@ const Index = () => {
     const itemsList = cart
       .map((item) => `• ${item.name} × ${formatQty(item.qty)} ${item.unit} = ${formatIQD(item.price_iqd * item.qty)}`)
       .join("\n");
-    const message = `🛒 *طلب جديد من فريش Fresh*
+    const message = `🛒 *طلب جديد من ${currentStore?.name ?? "المتجر"}*
 ━━━━━━━━━━━━━━
 👤 الاسم: ${customer.name}
 📞 الهاتف: ${customer.phone}
@@ -233,10 +234,15 @@ ${itemsList}
 💰 *المجموع الكلي: ${formatIQD(totalPrice)}*
 ━━━━━━━━━━━━━━
 🔖 رقم الطلب: ${orderId.slice(0, 8).toUpperCase()}`;
-    const phone = STORE_PHONE_TEL.replace(/\D/g, "");
-    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    const waNumber = currentStore?.whatsapp?.trim();
+    if (!waNumber) {
+      toast.error("رقم واتساب المتجر غير متوفر");
+      return;
+    }
+    const url = buildWhatsAppLink(waNumber, message);
     window.open(url, "_blank");
   };
+
 
   const submitOrder = async () => {
     const validatedCustomer = validateCustomer();
@@ -381,10 +387,14 @@ ${itemsList}
             <img src={currentStore?.logo_url || freshLogo} alt={`شعار ${currentStore?.name ?? "فريش Fresh"}`} className="h-12 w-auto md:h-14 object-contain" />
             <div className="hidden sm:block">
               <p className="text-xs text-muted-foreground">توصيل طازج إلى باب بيتك</p>
-              <a href={`tel:${STORE_PHONE_TEL}`} className="text-sm font-semibold text-secondary hover:text-primary block" dir="ltr">
-                📞 {STORE_PHONE}
-              </a>
-              <p className="text-xs text-muted-foreground">📍 {STORE_LOCATION}</p>
+              {currentStore?.phone && (
+                <a href={`tel:${currentStore.phone}`} className="text-sm font-semibold text-secondary hover:text-primary block" dir="ltr">
+                  📞 {currentStore.phone}
+                </a>
+              )}
+              {currentStore?.address && (
+                <p className="text-xs text-muted-foreground">📍 {currentStore.address}</p>
+              )}
             </div>
             {currentStore && (
               <Button variant="outline" size="sm" onClick={openSelector} className="gap-1 h-9">
