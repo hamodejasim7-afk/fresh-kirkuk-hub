@@ -384,7 +384,7 @@ ${itemsList}
       <header className="sticky top-0 z-40 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
         <div className="container mx-auto flex items-center justify-between gap-4 px-4 py-3">
           <div className="flex items-center gap-3">
-            <img src={currentStore?.logo_url || freshLogo} alt={`شعار ${currentStore?.name ?? "فريش Fresh"}`} className="h-12 w-auto md:h-14 object-contain" />
+            <img src={currentStore?.logo_url || freshLogo} alt={`شعار ${currentStore?.name ?? "فريش Fresh"}`} className="h-12 w-auto md:h-14 object-contain" onError={(e) => { if (e.currentTarget.src !== freshLogo) e.currentTarget.src = freshLogo; }} />
             <div className="hidden sm:block">
               <p className="text-xs font-semibold text-foreground">{currentStore?.name ?? "فريش Fresh"}</p>
               {currentStore?.phone && (
