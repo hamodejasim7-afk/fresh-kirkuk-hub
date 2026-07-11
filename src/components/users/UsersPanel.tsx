@@ -20,6 +20,7 @@ import {
 import { UserPlus, KeyRound, Ban, Power, Store as StoreIcon, ShieldCheck, Copy } from "lucide-react";
 import { UserFormDialog } from "@/components/users/UserFormDialog";
 import { PermissionsDialog } from "@/components/PermissionsDialog";
+import { ROLE_LABEL_AR } from "@/lib/roleLabels";
 
 interface UserRow {
   id: string;
@@ -30,16 +31,6 @@ interface UserRow {
   roles: string[];
 }
 
-const ROLE_LABEL: Record<string, string> = {
-  super_admin: "مدير عام",
-  store_admin: "مدير متجر",
-  admin: "مدير (قديم)",
-  accountant: "محاسب",
-  employee: "موظف",
-  driver: "سائق",
-  cashier: "أمين صندوق",
-  inventory_manager: "مدير مخزون",
-};
 
 const ROLE_VARIANT: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   super_admin: "destructive",
