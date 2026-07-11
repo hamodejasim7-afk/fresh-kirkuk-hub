@@ -59,11 +59,10 @@ Deno.serve(async (req) => {
     const isSuperAdmin =
       roles.includes("super_admin") || (roles.includes("admin") && callerStoreId === null);
     const isStoreAdmin =
-      roles.includes("store_admin") || (roles.includes("admin") && callerStoreId !== null);
-    const isAccountant = roles.includes("accountant");
+      roles.includes("store_admin") && callerStoreId !== null;
 
-    if (!isSuperAdmin && !isStoreAdmin && !isAccountant) {
-      return json({ error: "Forbidden" }, 403);
+    if (!isSuperAdmin && !isStoreAdmin) {
+      return json({ error: "ليست لديك صلاحية حذف المستخدمين" }, 403);
     }
 
     const body = await req.json().catch(() => ({}));
@@ -72,7 +71,7 @@ Deno.serve(async (req) => {
       return json({ error: "user_id غير صالح" }, 400);
     }
     if (target === callerId) {
-      return json({ error: "لا يمكنك حذف حسابك الخاص" }, 400);
+      return json({ error: "لا يمكنك حذف نفسك" }, 400);
     }
 
     // Load target roles + store for scope enforcement
@@ -86,17 +85,13 @@ Deno.serve(async (req) => {
 
     if (isSuperAdmin) {
       // Super admins may delete anyone (except themselves, already blocked)
-    } else if (isStoreAdmin) {
-      if (!callerStoreId || targetStoreId !== callerStoreId) {
+    } else {
+      // Store Admin
+      if (targetStoreId !== callerStoreId) {
         return json({ error: "لا يمكنك حذف مستخدم من متجر آخر" }, 403);
       }
       if (targetIsPrivileged) {
         return json({ error: "لا يمكنك حذف مستخدم بصلاحيات إدارية" }, 403);
-      }
-    } else if (isAccountant) {
-      // Backward-compat: accountants may only delete drivers
-      if (!targetRoles.every((r) => r === "driver") || targetRoles.length === 0) {
-        return json({ error: "المحاسب يستطيع حذف السائقين فقط" }, 403);
       }
     }
 
