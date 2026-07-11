@@ -86,10 +86,14 @@ export const ProductsPanel = ({ storeId }: { storeId?: string | null } = {}) => 
   const openEdit = (p: DBProduct) => { setEditing(p); setOpen(true); };
 
   const handleImageUpload = async (file: File) => {
+    if (!storeId) {
+      toast.error("اختر متجراً أولاً قبل رفع صورة المنتج");
+      return;
+    }
     setUploading(true);
     try {
       const ext = file.name.split(".").pop();
-      const path = `${crypto.randomUUID()}.${ext}`;
+      const path = `products/${storeId}/${crypto.randomUUID()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from("product-images")
         .upload(path, file, { cacheControl: "3600", upsert: false });
