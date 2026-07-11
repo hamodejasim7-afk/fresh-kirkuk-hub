@@ -386,7 +386,7 @@ ${itemsList}
           <div className="flex items-center gap-3">
             <img src={currentStore?.logo_url || freshLogo} alt={`شعار ${currentStore?.name ?? "فريش Fresh"}`} className="h-12 w-auto md:h-14 object-contain" />
             <div className="hidden sm:block">
-              <p className="text-xs text-muted-foreground">توصيل طازج إلى باب بيتك</p>
+              <p className="text-xs font-semibold text-foreground">{currentStore?.name ?? "فريش Fresh"}</p>
               {currentStore?.phone && (
                 <a href={`tel:${currentStore.phone}`} className="text-sm font-semibold text-secondary hover:text-primary block" dir="ltr">
                   📞 {currentStore.phone}
@@ -689,7 +689,7 @@ ${itemsList}
             </Button>
           </div>
           <div className="flex justify-center">
-            <img src={freshLogo} alt="فريش Fresh" className="w-full max-w-sm drop-shadow-xl" />
+            <img src={currentStore?.logo_url || freshLogo} alt={`شعار ${currentStore?.name ?? "فريش Fresh"}`} className="w-full max-w-sm drop-shadow-xl" />
           </div>
         </div>
       </section>
@@ -847,8 +847,11 @@ ${itemsList}
       <footer className="border-t bg-secondary text-secondary-foreground">
         <div className="container mx-auto grid gap-6 px-4 py-10 md:grid-cols-3">
           <div className="space-y-3">
-            <img src={freshLogo} alt="فريش Fresh" className="h-14 w-auto bg-white/95 rounded-lg p-2" />
-            <p className="text-sm opacity-80">طازج كل يوم - توصيل داخل مدينة كركوك</p>
+            <img src={currentStore?.logo_url || freshLogo} alt={`شعار ${currentStore?.name ?? "فريش Fresh"}`} className="h-14 w-auto bg-white/95 rounded-lg p-2" />
+            <p className="text-sm font-semibold opacity-90">{currentStore?.name ?? "فريش Fresh"}</p>
+            {currentStore?.address && (
+              <p className="text-xs opacity-80">{currentStore.address}</p>
+            )}
           </div>
           <div className="space-y-2">
             <h3 className="font-semibold">تواصل معنا</h3>
@@ -870,7 +873,7 @@ ${itemsList}
           </div>
         </div>
         <div className="border-t border-white/10 py-4 text-center text-xs opacity-70">
-          © {new Date().getFullYear()} فريش Fresh - جميع الحقوق محفوظة
+          © {new Date().getFullYear()} {currentStore?.name ?? "فريش Fresh"} - جميع الحقوق محفوظة
         </div>
       </footer>
 
