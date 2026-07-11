@@ -40,7 +40,7 @@ import { BulkPriceUpdate } from "@/components/BulkPriceUpdate";
 import { CategoriesPanel } from "@/components/CategoriesPanel";
 import { PricingPanel } from "@/components/PricingPanel";
 import { DeliveryZonesPanel } from "@/components/DeliveryZonesPanel";
-import { STORE_PHONE, STORE_PHONE_TEL, STORE_LOCATION } from "@/lib/constants";
+
 import { exportOrdersToExcel } from "@/lib/exportExcel";
 import { ensureNotificationPermission, showOrderNotification } from "@/lib/notifications";
 import { formatIQD as fmt } from "@/lib/format";
@@ -133,14 +133,13 @@ const Admin = () => {
   // Visual flash for incoming new orders
   const [hasNewFlash, setHasNewFlash] = useState(false);
 
-  // Store WhatsApp settings (saved per-browser)
-  const [storePhone, setStorePhone] = useState<string>(() => localStorage.getItem("fresh_store_phone") ?? "");
+  // Store WhatsApp number comes from currentStore (edited only in StoresPanel).
+  const storePhone = currentStore?.whatsapp ?? "";
   const [autoSend, setAutoSend] = useState<boolean>(() => localStorage.getItem("fresh_auto_wa") === "1");
   const [soundOn, setSoundOn] = useState<boolean>(() => localStorage.getItem("fresh_sound") !== "0");
   const knownIdsRef = useRef<Set<string>>(new Set());
   const initializedRef = useRef(false);
 
-  useEffect(() => { localStorage.setItem("fresh_store_phone", storePhone); }, [storePhone]);
   useEffect(() => { localStorage.setItem("fresh_auto_wa", autoSend ? "1" : "0"); }, [autoSend]);
   useEffect(() => { localStorage.setItem("fresh_sound", soundOn ? "1" : "0"); }, [soundOn]);
 
@@ -195,7 +194,7 @@ const Admin = () => {
       return;
     }
     if (!storePhone.trim()) {
-      toast.error("أدخل رقم المتجر في الإعدادات أولاً");
+      toast.error("رقم واتساب المتجر غير متوفر");
       return;
     }
     const text = buildOrderWhatsAppText(order, items[orderId] ?? []);
@@ -656,14 +655,18 @@ const Admin = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <a
-              href={`tel:${STORE_PHONE_TEL}`}
-              className="hidden md:inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
-              dir="ltr"
-            >
-              📞 {STORE_PHONE}
-            </a>
-            <span className="hidden md:inline text-xs text-muted-foreground">📍 {STORE_LOCATION}</span>
+            {currentStore?.phone && (
+              <a
+                href={`tel:${currentStore.phone}`}
+                className="hidden md:inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+                dir="ltr"
+              >
+                📞 {currentStore.phone}
+              </a>
+            )}
+            {currentStore?.address && (
+              <span className="hidden md:inline text-xs text-muted-foreground">📍 {currentStore.address}</span>
+            )}
             <Button asChild variant="outline" size="sm">
               <Link to="/"><ArrowRight className="h-4 w-4 ml-1" />المتجر</Link>
             </Button>
@@ -694,15 +697,16 @@ const Admin = () => {
             </h3>
             <div className="grid gap-3 md:grid-cols-3 items-end">
               <div className="space-y-1">
-                <Label htmlFor="store-phone">رقم واتساب المتجر</Label>
-                <Input
-                  id="store-phone"
-                  value={storePhone}
-                  onChange={(e) => setStorePhone(e.target.value)}
-                  placeholder="07XX XXX XXXX"
+                <Label>رقم واتساب المتجر</Label>
+                <div
+                  className="h-10 flex items-center rounded-md border bg-muted/50 px-3 text-sm"
                   dir="ltr"
-                />
-                <p className="text-xs text-muted-foreground">عراقي: يكفي 07XXXXXXXXX</p>
+                >
+                  {storePhone.trim() || "—"}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  يُعدَّل من إدارة المتاجر فقط.
+                </p>
               </div>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
