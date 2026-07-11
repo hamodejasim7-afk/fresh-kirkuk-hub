@@ -689,7 +689,7 @@ ${itemsList}
             </Button>
           </div>
           <div className="flex justify-center">
-            <img src={currentStore?.logo_url || freshLogo} alt={`شعار ${currentStore?.name ?? "فريش Fresh"}`} className="w-full max-w-sm drop-shadow-xl" />
+            <img src={currentStore?.logo_url || freshLogo} alt={`شعار ${currentStore?.name ?? "فريش Fresh"}`} className="w-full max-w-sm drop-shadow-xl" onError={(e) => { if (e.currentTarget.src !== freshLogo) e.currentTarget.src = freshLogo; }} />
           </div>
         </div>
       </section>
