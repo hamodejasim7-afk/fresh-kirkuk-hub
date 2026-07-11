@@ -24,6 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreContext";
 import { formatIQD } from "@/lib/format";
+import { ROLE_LABEL_AR } from "@/lib/roleLabels";
 import { toast } from "sonner";
 import {
   Printer, RotateCcw, Calendar, TrendingUp, Users, Package, LogOut, ArrowRight, UserPlus,
@@ -1295,7 +1296,7 @@ const StaffPanel = ({
       toast.error((data as any)?.error ?? error?.message ?? "فشل إنشاء الحساب");
       return;
     }
-    const roleLabel = role === "admin" ? "المدير" : role === "accountant" ? "المحاسب" : "السائق";
+    const roleLabel = ROLE_LABEL_AR[role] ?? role;
     toast.success(`تم إنشاء حساب ${roleLabel} بنجاح`);
     setEmail("");
     setPassword("");
@@ -1346,7 +1347,7 @@ const StaffPanel = ({
       toast.error("فشل تعديل الدور: " + error.message);
       return;
     }
-    toast.success(`تم تغيير الدور إلى ${target === "accountant" ? "محاسب" : "سائق"}`);
+    toast.success(`تم تغيير الدور إلى ${ROLE_LABEL_AR[target] ?? target}`);
     reload();
   };
 
@@ -1471,7 +1472,7 @@ const StaffPanel = ({
                             key={r}
                             variant={r === "admin" ? "default" : r === "accountant" ? "outline" : "secondary"}
                           >
-                            {r === "admin" ? "مدير" : r === "accountant" ? "محاسب" : "سائق"}
+                            {ROLE_LABEL_AR[r] ?? r}
                           </Badge>
                         ))}
                       </div>
@@ -1520,11 +1521,11 @@ const StaffPanel = ({
                                     <AlertDialogDescription>
                                       سيتم تغيير دور <strong>{s.full_name || "هذا الموظف"}</strong> من
                                       <Badge variant="secondary" className="mx-1">
-                                        {currentSwap === "accountant" ? "محاسب" : "سائق"}
+                                      {ROLE_LABEL_AR[currentSwap] ?? currentSwap}
                                       </Badge>
                                       إلى
                                       <Badge variant="secondary" className="mx-1">
-                                        {target === "accountant" ? "محاسب" : "سائق"}
+                                        {ROLE_LABEL_AR[target] ?? target}
                                       </Badge>
                                       .<br />سيتم تحديث ما يراه فوراً عند تحديث صفحته.
                                     </AlertDialogDescription>
