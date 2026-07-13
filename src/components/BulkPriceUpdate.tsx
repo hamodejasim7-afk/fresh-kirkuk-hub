@@ -30,7 +30,8 @@ const toBase64 = (file: File): Promise<string> =>
   });
 
 export const BulkPriceUpdate = () => {
-  const { products, reload } = useProducts();
+  const { storeId, ready } = useStoreScope();
+  const { products, reload } = useProducts({ storeId });
   const [processing, setProcessing] = useState(false);
   const [summary, setSummary] = useState<Summary | null>(null);
   const imgRef = useRef<HTMLInputElement>(null);
