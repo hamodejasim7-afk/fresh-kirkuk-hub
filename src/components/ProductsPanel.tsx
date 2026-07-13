@@ -56,6 +56,7 @@ const emptyForm: FormState = {
 export const ProductsPanel = ({ storeId }: { storeId?: string | null } = {}) => {
   const { products, loading, reload } = useProducts({ storeId });
   const { categories } = useCategories({ onlyActive: true, storeId });
+  const { isSuperAdmin } = useAuth();
   const categoryNames = categories.map((c) => c.name);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<DBProduct | null>(null);
@@ -63,6 +64,7 @@ export const ProductsPanel = ({ storeId }: { storeId?: string | null } = {}) => 
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [filterCat, setFilterCat] = useState<string>("الكل");
+  const [copyOpen, setCopyOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
