@@ -4,6 +4,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import type { Store } from "@/hooks/useStores";
 import { useAuth } from "@/contexts/AuthContext";
+import { normalizeStoreMediaUrls } from "@/lib/storeMedia";
 
 const STORAGE_KEY = "fresh:selectedStoreId";
 
@@ -55,7 +56,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
       .eq("status", "active")
       .order("sort_order", { ascending: true, nullsFirst: false })
       .order("name", { ascending: true });
-    const rows = (data ?? []) as Store[];
+    const rows = ((data ?? []) as Store[]).map(normalizeStoreMediaUrls);
     setActiveStores(rows);
 
     setSelectedId((prev) => {

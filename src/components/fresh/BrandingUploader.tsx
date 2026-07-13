@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Upload, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { STORE_MEDIA_BUCKET } from "@/lib/storeMedia";
 
 type Kind = "logo" | "cover" | "icon";
 
@@ -49,21 +50,21 @@ export function BrandingUploader({ storeId, kind, value, onChange, label }: Prop
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "png";
     const path = `stores/${storeId}/${kind}-${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage
-      .from("fresh")
+      .from(STORE_MEDIA_BUCKET)
       .upload(path, file, { cacheControl: "3600", upsert: false, contentType: file.type });
     if (upErr) {
       setUploading(false);
       toast.error("فشل الرفع: " + upErr.message);
       return;
     }
-    const { data: pub } = supabase.storage.from("fresh").getPublicUrl(path);
+    const { data: pub } = supabase.storage.from(STORE_MEDIA_BUCKET).getPublicUrl(path);
     const newUrl = pub.publicUrl;
 
     // Delete previous object if it was in our bucket
     if (value && value.includes("/fresh/")) {
       const prevPath = value.split("/fresh/")[1]?.split("?")[0];
       if (prevPath) {
-        await supabase.storage.from("fresh").remove([prevPath]);
+        await supabase.storage.from(STORE_MEDIA_BUCKET).remove([prevPath]);
       }
     }
     onChange(newUrl);
@@ -74,7 +75,7 @@ export function BrandingUploader({ storeId, kind, value, onChange, label }: Prop
   const clear = async () => {
     if (value && value.includes("/fresh/")) {
       const prevPath = value.split("/fresh/")[1]?.split("?")[0];
-      if (prevPath) await supabase.storage.from("fresh").remove([prevPath]);
+      if (prevPath) await supabase.storage.from(STORE_MEDIA_BUCKET).remove([prevPath]);
     }
     onChange(null);
   };

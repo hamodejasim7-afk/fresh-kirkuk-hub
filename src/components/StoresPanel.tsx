@@ -23,6 +23,7 @@ import {
 import { Store as StoreIcon, Plus, Pencil, Power, PowerOff, Archive, Wand2 } from "lucide-react";
 import { StoreSetupWizard } from "@/components/store-setup/StoreSetupWizard";
 import { BrandingUploader } from "@/components/fresh/BrandingUploader";
+import { normalizeStoreMediaUrls } from "@/lib/storeMedia";
 
 interface StoreRow {
   id: string;
@@ -115,7 +116,7 @@ export function StoresPanel() {
       .order("sort_order", { ascending: true, nullsFirst: false })
       .order("name", { ascending: true });
     if (error) toast.error("فشل تحميل المتاجر");
-    else setRows((data ?? []) as StoreRow[]);
+    else setRows(((data ?? []) as StoreRow[]).map(normalizeStoreMediaUrls));
     setLoading(false);
   }, []);
 

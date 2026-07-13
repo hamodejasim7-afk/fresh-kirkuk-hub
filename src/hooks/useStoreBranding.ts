@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeStoreMediaUrls } from "@/lib/storeMedia";
 
 export interface StoreBranding {
   id: string;
@@ -34,7 +35,7 @@ export function useStoreBranding(storeId: string | null | undefined) {
       .maybeSingle()
       .then(({ data }) => {
         if (!alive) return;
-        setBranding((data as StoreBranding | null) ?? null);
+        setBranding(data ? normalizeStoreMediaUrls(data as StoreBranding) : null);
         setLoading(false);
       });
     return () => {
