@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { useProducts } from "@/hooks/useProducts";
+import { useStoreScope } from "@/hooks/useStoreScope";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
