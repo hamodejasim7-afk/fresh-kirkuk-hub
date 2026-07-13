@@ -18,10 +18,12 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, Upload, Package } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, Package, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { formatIQD } from "@/lib/format";
 import { useCategories } from "@/hooks/useCategories";
+import { useAuth } from "@/contexts/AuthContext";
+import { CopyProductsDialog } from "@/components/CopyProductsDialog";
 
 const UNITS = ["كغم", "حبة", "ربطة", "علبة", "لتر"];
 
