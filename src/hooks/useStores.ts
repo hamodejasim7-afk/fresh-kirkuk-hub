@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeStoreMediaUrls } from "@/lib/storeMedia";
 
 export interface Store {
   id: string;
@@ -31,7 +32,7 @@ export function useStores(opts: { onlyActive?: boolean } = {}) {
 
     if (onlyActive) q = q.eq("status", "active");
     const { data, error } = await q;
-    if (!error && data) setStores(data as Store[]);
+    if (!error && data) setStores((data as Store[]).map(normalizeStoreMediaUrls));
     setLoading(false);
   }, [onlyActive]);
 
