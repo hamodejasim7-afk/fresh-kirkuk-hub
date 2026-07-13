@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Store as StoreIcon, Plus, Pencil, Power, PowerOff, Archive, Wand2 } from "lucide-react";
 import { StoreSetupWizard } from "@/components/store-setup/StoreSetupWizard";
-import { BrandingUploader } from "@/components/store-branding/BrandingUploader";
+import { BrandingUploader } from "@/components/fresh/BrandingUploader";
 
 interface StoreRow {
   id: string;
