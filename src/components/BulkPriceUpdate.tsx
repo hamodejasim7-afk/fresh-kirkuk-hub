@@ -151,10 +151,15 @@ export const BulkPriceUpdate = () => {
   };
 
   const downloadTemplate = async () => {
+    if (!storeId) {
+      toast.error("اختر متجراً أولاً لتحميل النموذج");
+      return;
+    }
     try {
       const { data, error } = await supabase
         .from("products")
         .select("name, price_iqd, unit")
+        .eq("store_id", storeId)
         .order("category", { ascending: true });
       if (error) throw error;
 
@@ -173,6 +178,18 @@ export const BulkPriceUpdate = () => {
       toast.error("تعذّر تحميل النموذج: " + (e?.message ?? e));
     }
   };
+
+  if (ready && !storeId) {
+    return (
+      <Card className="p-4">
+        <h3 className="text-lg font-bold">تحديث الأسعار تلقائياً 🤖</h3>
+        <p className="mt-2 text-sm text-muted-foreground">
+          اختر متجراً أولاً من أعلى الصفحة لاستخدام تحديث الأسعار.
+        </p>
+      </Card>
+    );
+  }
+
 
   return (
     <Card className="p-4 space-y-4">
