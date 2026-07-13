@@ -634,6 +634,17 @@ export type Database = {
       }
       auth_store_id: { Args: never; Returns: string }
       can_manage_user: { Args: { _target: string }; Returns: boolean }
+      get_orders_by_phone: {
+        Args: { _phone: string }
+        Returns: {
+          created_at: string
+          customer_name: string
+          id: string
+          items: Json
+          status: string
+          total_iqd: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
