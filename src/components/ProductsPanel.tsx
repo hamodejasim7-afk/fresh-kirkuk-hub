@@ -366,6 +366,10 @@ export const ProductsPanel = ({ storeId }: { storeId?: string | null } = {}) => 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {isSuperAdmin && (
+        <CopyProductsDialog open={copyOpen} onOpenChange={setCopyOpen} onCopied={reload} />
+      )}
     </div>
   );
 };
