@@ -18,10 +18,12 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, Upload, Package } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, Package, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { formatIQD } from "@/lib/format";
 import { useCategories } from "@/hooks/useCategories";
+import { useAuth } from "@/contexts/AuthContext";
+import { CopyProductsDialog } from "@/components/CopyProductsDialog";
 
 const UNITS = ["كغم", "حبة", "ربطة", "علبة", "لتر"];
 
@@ -54,6 +56,7 @@ const emptyForm: FormState = {
 export const ProductsPanel = ({ storeId }: { storeId?: string | null } = {}) => {
   const { products, loading, reload } = useProducts({ storeId });
   const { categories } = useCategories({ onlyActive: true, storeId });
+  const { isSuperAdmin } = useAuth();
   const categoryNames = categories.map((c) => c.name);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<DBProduct | null>(null);
@@ -61,6 +64,7 @@ export const ProductsPanel = ({ storeId }: { storeId?: string | null } = {}) => 
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [filterCat, setFilterCat] = useState<string>("الكل");
+  const [copyOpen, setCopyOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -177,6 +181,11 @@ export const ProductsPanel = ({ storeId }: { storeId?: string | null } = {}) => 
               ))}
             </SelectContent>
           </Select>
+          {isSuperAdmin && (
+            <Button variant="outline" onClick={() => setCopyOpen(true)} className="gap-1">
+              <Copy className="h-4 w-4" /> نسخ منتجات
+            </Button>
+          )}
           <Button onClick={openNew} className="gap-1">
             <Plus className="h-4 w-4" /> منتج جديد
           </Button>
@@ -357,6 +366,10 @@ export const ProductsPanel = ({ storeId }: { storeId?: string | null } = {}) => 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {isSuperAdmin && (
+        <CopyProductsDialog open={copyOpen} onOpenChange={setCopyOpen} onCopied={reload} />
+      )}
     </div>
   );
 };

@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { useProducts } from "@/hooks/useProducts";
+import { useStoreScope } from "@/hooks/useStoreScope";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +30,8 @@ const toBase64 = (file: File): Promise<string> =>
   });
 
 export const BulkPriceUpdate = () => {
-  const { products, reload } = useProducts();
+  const { storeId, ready } = useStoreScope();
+  const { products, reload } = useProducts({ storeId });
   const [processing, setProcessing] = useState(false);
   const [summary, setSummary] = useState<Summary | null>(null);
   const imgRef = useRef<HTMLInputElement>(null);
@@ -149,10 +151,15 @@ export const BulkPriceUpdate = () => {
   };
 
   const downloadTemplate = async () => {
+    if (!storeId) {
+      toast.error("اختر متجراً أولاً لتحميل النموذج");
+      return;
+    }
     try {
       const { data, error } = await supabase
         .from("products")
         .select("name, price_iqd, unit")
+        .eq("store_id", storeId)
         .order("category", { ascending: true });
       if (error) throw error;
 
@@ -171,6 +178,18 @@ export const BulkPriceUpdate = () => {
       toast.error("تعذّر تحميل النموذج: " + (e?.message ?? e));
     }
   };
+
+  if (ready && !storeId) {
+    return (
+      <Card className="p-4">
+        <h3 className="text-lg font-bold">تحديث الأسعار تلقائياً 🤖</h3>
+        <p className="mt-2 text-sm text-muted-foreground">
+          اختر متجراً أولاً من أعلى الصفحة لاستخدام تحديث الأسعار.
+        </p>
+      </Card>
+    );
+  }
+
 
   return (
     <Card className="p-4 space-y-4">
