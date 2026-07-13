@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { normalizeStoreMediaUrls } from "@/lib/storeMedia";
+import { signStoreMediaUrls } from "@/lib/storeMedia";
 
 export interface StoreBranding {
   id: string;
@@ -33,9 +33,9 @@ export function useStoreBranding(storeId: string | null | undefined) {
       .select("id, name, logo_url, cover_url, icon_url")
       .eq("id", storeId)
       .maybeSingle()
-      .then(({ data }) => {
+      .then(async ({ data }) => {
         if (!alive) return;
-        setBranding(data ? normalizeStoreMediaUrls(data as StoreBranding) : null);
+        setBranding(data ? await signStoreMediaUrls(data as StoreBranding) : null);
         setLoading(false);
       });
     return () => {
