@@ -335,14 +335,12 @@ ${itemsList}
     }
     setTrackLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("id, status, total_iqd, created_at, customer_name, order_items(product_name, quantity, price_iqd)")
-        .eq("customer_phone", trackPhone.trim())
-        .order("created_at", { ascending: false })
-        .limit(5);
+      const { data, error } = await supabase.rpc("get_orders_by_phone", {
+        _phone: trackPhone.trim(),
+      });
       if (error) throw error;
-      setTrackOrders(data ?? []);
+      const mapped = (data ?? []).map((o: any) => ({ ...o, order_items: o.items ?? [] }));
+      setTrackOrders(mapped);
     } catch {
       toast.error("تعذّر تحميل الطلبات");
     } finally {
