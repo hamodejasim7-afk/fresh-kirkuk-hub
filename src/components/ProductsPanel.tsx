@@ -181,6 +181,11 @@ export const ProductsPanel = ({ storeId }: { storeId?: string | null } = {}) => 
               ))}
             </SelectContent>
           </Select>
+          {isSuperAdmin && (
+            <Button variant="outline" onClick={() => setCopyOpen(true)} className="gap-1">
+              <Copy className="h-4 w-4" /> نسخ منتجات
+            </Button>
+          )}
           <Button onClick={openNew} className="gap-1">
             <Plus className="h-4 w-4" /> منتج جديد
           </Button>
