@@ -1,10 +1,10 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Upload, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { STORE_MEDIA_BUCKET } from "@/lib/storeMedia";
+import { createFreshSignedUrl, getFreshStoragePath, STORE_MEDIA_BUCKET } from "@/lib/storeMedia";
 
 type Kind = "logo" | "cover" | "icon";
 
@@ -31,7 +31,18 @@ const KIND_LABEL: Record<Kind, string> = {
 export function BrandingUploader({ storeId, kind, value, onChange, label }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const disabled = !storeId;
+
+  useEffect(() => {
+    let alive = true;
+    createFreshSignedUrl(value).then((url) => {
+      if (alive) setPreviewUrl(url);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [value]);
 
   const handleFile = async (file: File) => {
     if (!storeId) {
@@ -57,26 +68,21 @@ export function BrandingUploader({ storeId, kind, value, onChange, label }: Prop
       toast.error("فشل الرفع: " + upErr.message);
       return;
     }
-    const { data: pub } = supabase.storage.from(STORE_MEDIA_BUCKET).getPublicUrl(path);
-    const newUrl = pub.publicUrl;
-
     // Delete previous object if it was in our bucket
-    if (value && value.includes("/fresh/")) {
-      const prevPath = value.split("/fresh/")[1]?.split("?")[0];
-      if (prevPath) {
-        await supabase.storage.from(STORE_MEDIA_BUCKET).remove([prevPath]);
-      }
+    const prevPath = getFreshStoragePath(value);
+    if (prevPath) {
+      await supabase.storage.from(STORE_MEDIA_BUCKET).remove([prevPath]);
     }
-    onChange(newUrl);
+    onChange(path);
+    setPreviewUrl(await createFreshSignedUrl(path));
     setUploading(false);
     toast.success("تم الرفع");
   };
 
   const clear = async () => {
-    if (value && value.includes("/fresh/")) {
-      const prevPath = value.split("/fresh/")[1]?.split("?")[0];
-      if (prevPath) await supabase.storage.from(STORE_MEDIA_BUCKET).remove([prevPath]);
-    }
+    const prevPath = getFreshStoragePath(value);
+    if (prevPath) await supabase.storage.from(STORE_MEDIA_BUCKET).remove([prevPath]);
+    setPreviewUrl(null);
     onChange(null);
   };
 
@@ -85,8 +91,8 @@ export function BrandingUploader({ storeId, kind, value, onChange, label }: Prop
       <Label>{label ?? KIND_LABEL[kind]}</Label>
       <div className="flex items-center gap-3">
         <div className="w-16 h-16 rounded border bg-muted overflow-hidden flex items-center justify-center">
-          {value ? (
-            <img src={value} alt={KIND_LABEL[kind]} className="w-full h-full object-cover" />
+          {previewUrl ? (
+            <img src={previewUrl} alt={KIND_LABEL[kind]} className="w-full h-full object-cover" />
           ) : (
             <span className="text-xs text-muted-foreground">لا توجد صورة</span>
           )}

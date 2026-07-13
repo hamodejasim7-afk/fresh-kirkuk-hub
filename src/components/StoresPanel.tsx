@@ -23,7 +23,6 @@ import {
 import { Store as StoreIcon, Plus, Pencil, Power, PowerOff, Archive, Wand2 } from "lucide-react";
 import { StoreSetupWizard } from "@/components/store-setup/StoreSetupWizard";
 import { BrandingUploader } from "@/components/fresh/BrandingUploader";
-import { normalizeStoreMediaUrls } from "@/lib/storeMedia";
 
 interface StoreRow {
   id: string;
@@ -116,7 +115,7 @@ export function StoresPanel() {
       .order("sort_order", { ascending: true, nullsFirst: false })
       .order("name", { ascending: true });
     if (error) toast.error("فشل تحميل المتاجر");
-    else setRows(((data ?? []) as StoreRow[]).map(normalizeStoreMediaUrls));
+    else setRows((data ?? []) as StoreRow[]);
     setLoading(false);
   }, []);
 
@@ -331,9 +330,9 @@ export function StoresPanel() {
             <Field label="اسم المتجر *"><Input value={form.name ?? ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
             <Field label="المعرّف (slug) *"><Input value={form.slug ?? ""} onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase() })} placeholder="fresh-market" /></Field>
             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 p-3 border rounded-md bg-muted/30">
-              <BrandingUploader storeId={editing?.id ?? "_pending"} kind="logo" value={form.logo_url} onChange={(url) => setForm({ ...form, logo_url: url ?? "" })} />
-              <BrandingUploader storeId={editing?.id ?? "_pending"} kind="cover" value={form.cover_url} onChange={(url) => setForm({ ...form, cover_url: url ?? "" })} />
-              <BrandingUploader storeId={editing?.id ?? "_pending"} kind="icon" value={form.icon_url} onChange={(url) => setForm({ ...form, icon_url: url ?? "" })} />
+              <BrandingUploader storeId={editing?.id ?? null} kind="logo" value={form.logo_url} onChange={(url) => setForm({ ...form, logo_url: url ?? "" })} />
+              <BrandingUploader storeId={editing?.id ?? null} kind="cover" value={form.cover_url} onChange={(url) => setForm({ ...form, cover_url: url ?? "" })} />
+              <BrandingUploader storeId={editing?.id ?? null} kind="icon" value={form.icon_url} onChange={(url) => setForm({ ...form, icon_url: url ?? "" })} />
             </div>
             <Field label="رابط الشعار (يدوي)"><Input value={form.logo_url ?? ""} onChange={(e) => setForm({ ...form, logo_url: e.target.value })} /></Field>
             <Field label="رابط الغلاف (يدوي)"><Input value={form.cover_url ?? ""} onChange={(e) => setForm({ ...form, cover_url: e.target.value })} /></Field>
