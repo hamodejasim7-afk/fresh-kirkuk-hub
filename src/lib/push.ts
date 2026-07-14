@@ -64,7 +64,7 @@ export async function subscribeToPush(opts: {
         user_id: opts.userId,
         store_id: opts.storeId,
         endpoint: sub.endpoint,
-        subscription: payload as unknown as Record<string, unknown>,
+        subscription: payload as any,
         user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
       },
     ],
