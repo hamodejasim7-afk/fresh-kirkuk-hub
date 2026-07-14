@@ -263,6 +263,10 @@ ${itemsList}
       toast.error("السلة فارغة");
       return;
     }
+    if (!selectedZone) {
+      toast.error("يرجى اختيار منطقة التوصيل");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -278,8 +282,8 @@ ${itemsList}
           notes: validatedCustomer.notes || null,
           total_iqd: totalPrice,
           delivery_fee_iqd: deliveryFee,
-          delivery_zone_id: selectedZone?.id ?? null,
-          delivery_zone_name: selectedZone?.name ?? null,
+          delivery_area_id: selectedZone.id,
+          delivery_zone_name: selectedZone.name,
           status: "new",
           store_id: storeId,
         } as any);
