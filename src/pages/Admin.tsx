@@ -49,6 +49,7 @@ import { PermissionsDialog } from "@/components/PermissionsDialog";
 import { LoyaltyPanel } from "@/components/loyalty/LoyaltyPanel";
 import { StoresPanel } from "@/components/StoresPanel";
 import { UsersPanel } from "@/components/users/UsersPanel";
+import { PushNotificationsToggle } from "@/components/PushNotificationsToggle";
 
 interface Order {
   id: string;
@@ -737,6 +738,7 @@ const Admin = () => {
               </label>
             </div>
             <NotificationPermissionRow />
+            <PushNotificationsToggle />
             <p className="text-xs text-muted-foreground mt-3">
               💡 الإرسال يفتح واتساب ويب/التطبيق برسالة جاهزة فيها كل تفاصيل الطلب — مجاني تماماً.
               للفتح التلقائي اسمح للمتصفح بفتح النوافذ المنبثقة لهذا الموقع.
