@@ -83,6 +83,29 @@ const Index = () => {
     return () => clearTimeout(t);
   }, [cart]);
 
+  // Load last order scoped to current store. Ignore entries from other stores.
+  useEffect(() => {
+    if (!storeId) { setLastOrder([]); setLastOrderStoreId(null); return; }
+    try {
+      const saved = localStorage.getItem("fresh_last_order");
+      if (!saved) { setLastOrder([]); setLastOrderStoreId(null); return; }
+      const parsed = JSON.parse(saved);
+      // New format: { store_id, items }. Legacy format: CartItem[] (unscoped) -> discard.
+      if (parsed && !Array.isArray(parsed) && parsed.store_id && Array.isArray(parsed.items)) {
+        if (parsed.store_id === storeId) {
+          setLastOrder(parsed.items);
+          setLastOrderStoreId(parsed.store_id);
+        } else {
+          setLastOrder([]);
+          setLastOrderStoreId(parsed.store_id);
+        }
+      } else {
+        setLastOrder([]);
+        setLastOrderStoreId(null);
+      }
+    } catch { setLastOrder([]); setLastOrderStoreId(null); }
+  }, [storeId]);
+
   // Background new-order watcher for admin/accountant browsing the storefront
   const seenOrderIdsRef = useRef<Set<string>>(new Set());
   const watcherInitRef = useRef(false);
