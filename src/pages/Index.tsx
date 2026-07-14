@@ -50,12 +50,8 @@ const Index = () => {
   const [submitting, setSubmitting] = useState(false);
   const [customer, setCustomer] = useState({ name: "", phone: "", address: "", notes: "" });
   const [searchQuery, setSearchQuery] = useState("");
-  const [lastOrder, setLastOrder] = useState<CartItem[]>(() => {
-    try {
-      const saved = localStorage.getItem("fresh_last_order");
-      return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
-  });
+  const [lastOrder, setLastOrder] = useState<CartItem[]>([]);
+  const [lastOrderStoreId, setLastOrderStoreId] = useState<string | null>(null);
   const [trackOpen, setTrackOpen] = useState(false);
   const [trackPhone, setTrackPhone] = useState("");
   const [trackOrders, setTrackOrders] = useState<any[]>([]);
@@ -86,6 +82,29 @@ const Index = () => {
     }, 300);
     return () => clearTimeout(t);
   }, [cart]);
+
+  // Load last order scoped to current store. Ignore entries from other stores.
+  useEffect(() => {
+    if (!storeId) { setLastOrder([]); setLastOrderStoreId(null); return; }
+    try {
+      const saved = localStorage.getItem("fresh_last_order");
+      if (!saved) { setLastOrder([]); setLastOrderStoreId(null); return; }
+      const parsed = JSON.parse(saved);
+      // New format: { store_id, items }. Legacy format: CartItem[] (unscoped) -> discard.
+      if (parsed && !Array.isArray(parsed) && parsed.store_id && Array.isArray(parsed.items)) {
+        if (parsed.store_id === storeId) {
+          setLastOrder(parsed.items);
+          setLastOrderStoreId(parsed.store_id);
+        } else {
+          setLastOrder([]);
+          setLastOrderStoreId(parsed.store_id);
+        }
+      } else {
+        setLastOrder([]);
+        setLastOrderStoreId(null);
+      }
+    } catch { setLastOrder([]); setLastOrderStoreId(null); }
+  }, [storeId]);
 
   // Background new-order watcher for admin/accountant browsing the storefront
   const seenOrderIdsRef = useRef<Set<string>>(new Set());
@@ -305,7 +324,11 @@ ${itemsList}
       toast.success("تم استلام طلبك! سنتصل بك قريباً.");
       openWhatsApp(orderId);
       setLastOrder(cart);
-      localStorage.setItem("fresh_last_order", JSON.stringify(cart));
+      setLastOrderStoreId(storeId);
+      localStorage.setItem(
+        "fresh_last_order",
+        JSON.stringify({ store_id: storeId, items: cart })
+      );
       setCart([]);
       setCustomer({ name: "", phone: "", address: "", notes: "" });
       setConfirmOpen(false);
@@ -363,13 +386,31 @@ ${itemsList}
 
   const reorder = () => {
     if (!lastOrder.length) return;
-    const updated = lastOrder.map((item) => {
-      const currentProduct = products.find((p) => p.id === item.id);
-      return currentProduct ? { ...currentProduct, qty: item.qty } : item;
-    });
-    setCart(updated);
+    // Match by id first (same store), then fall back to name within current store.
+    // Always use the current store's product data (price, unit, availability).
+    const matched: CartItem[] = [];
+    const missing: string[] = [];
+    for (const item of lastOrder) {
+      const current =
+        products.find((p) => p.id === item.id) ??
+        products.find((p) => p.name.trim() === item.name.trim());
+      if (current) {
+        matched.push({ ...current, qty: item.qty } as CartItem);
+      } else {
+        missing.push(item.name);
+      }
+    }
+    if (!matched.length) {
+      toast.error("لا تتوفر منتجات الطلب السابق في هذا المتجر");
+      return;
+    }
+    setCart(matched);
     setCartOpen(true);
-    toast.success("تمت إضافة الطلب السابق للسلة ✓", { position: "bottom-right" });
+    if (missing.length) {
+      toast.warning(`بعض المنتجات غير متوفرة في هذا المتجر: ${missing.join("، ")}`);
+    } else {
+      toast.success("تمت إضافة الطلب السابق للسلة ✓", { position: "bottom-right" });
+    }
   };
 
   if (storeLoading) {
