@@ -19,10 +19,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Truck } from "lucide-react";
 import { useDeliveryZones, type DeliveryZone } from "@/hooks/useDeliveryZones";
+import { useStoreScope } from "@/hooks/useStoreScope";
 import { formatIQD } from "@/lib/format";
 
 export function DeliveryZonesPanel() {
-  const { zones, loading } = useDeliveryZones();
+  const { storeId, ready } = useStoreScope();
+  const { zones, loading } = useDeliveryZones({ storeId });
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<DeliveryZone | null>(null);
   const [name, setName] = useState("");
@@ -42,13 +44,14 @@ export function DeliveryZonesPanel() {
   const startEdit = (z: DeliveryZone) => {
     setEditing(z);
     setName(z.name);
-    setPrice(String(z.price_iqd));
+    setPrice(String(z.fee_iqd));
     setIsActive(z.is_active);
     setSortOrder(String(z.sort_order));
     setOpen(true);
   };
 
   const save = async () => {
+    if (!storeId) { toast.error("اختر متجراً أولاً"); return; }
     const trimmed = name.trim();
     const priceNum = Number(price);
     const sortNum = Number(sortOrder) || 0;
@@ -59,15 +62,15 @@ export function DeliveryZonesPanel() {
     try {
       if (editing) {
         const { error } = await supabase
-          .from("delivery_zones" as any)
-          .update({ name: trimmed, price_iqd: priceNum, is_active: isActive, sort_order: sortNum })
+          .from("delivery_areas")
+          .update({ name: trimmed, fee_iqd: priceNum, is_active: isActive, sort_order: sortNum })
           .eq("id", editing.id);
         if (error) throw error;
         toast.success("تم تحديث المنطقة");
       } else {
         const { error } = await supabase
-          .from("delivery_zones" as any)
-          .insert({ name: trimmed, price_iqd: priceNum, is_active: isActive, sort_order: sortNum });
+          .from("delivery_areas")
+          .insert({ store_id: storeId, name: trimmed, fee_iqd: priceNum, is_active: isActive, sort_order: sortNum });
         if (error) throw error;
         toast.success("تمت إضافة المنطقة");
       }
@@ -81,10 +84,18 @@ export function DeliveryZonesPanel() {
   };
 
   const remove = async (z: DeliveryZone) => {
-    const { error } = await supabase.from("delivery_zones" as any).delete().eq("id", z.id);
+    const { error } = await supabase.from("delivery_areas").delete().eq("id", z.id);
     if (error) { toast.error("فشل الحذف: " + error.message); return; }
     toast.success("تم حذف المنطقة");
   };
+
+  if (ready && !storeId) {
+    return (
+      <Card className="p-6 text-center text-muted-foreground">
+        اختر متجراً من الأعلى لإدارة مناطق التوصيل الخاصة به.
+      </Card>
+    );
+  }
 
   return (
     <Card className="p-4 space-y-4">
@@ -151,7 +162,7 @@ export function DeliveryZonesPanel() {
             {zones.map((z) => (
               <TableRow key={z.id}>
                 <TableCell className="font-medium">{z.name}</TableCell>
-                <TableCell>{formatIQD(z.price_iqd)}</TableCell>
+                <TableCell>{formatIQD(z.fee_iqd)}</TableCell>
                 <TableCell>
                   <span className={z.is_active ? "text-green-600" : "text-muted-foreground"}>
                     {z.is_active ? "مفعّلة" : "متوقفة"}
@@ -191,7 +202,7 @@ export function DeliveryZonesPanel() {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        إذا لم تكن منطقة الزبون موجودة هنا، يُستخدم السعر الافتراضي ({formatIQD(2000)}).
+        هذه المناطق تُعرض للزبائن عند اختيار هذا المتجر فقط.
       </p>
     </Card>
   );
