@@ -28,7 +28,7 @@ import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { useProducts, type DBProduct } from "@/hooks/useProducts";
 import { orderCustomerSchema } from "@/lib/orderValidation";
 import { useCategories } from "@/hooks/useCategories";
-import { DELIVERY_FEE_IQD } from "@/lib/constants";
+
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useDeliveryZones } from "@/hooks/useDeliveryZones";
