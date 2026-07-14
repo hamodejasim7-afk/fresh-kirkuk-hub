@@ -530,8 +530,12 @@ const Admin = () => {
 
   const resetSales = async () => {
     console.log("resetSales called");
+    if (!effectiveStoreId) {
+      toast.error("يرجى اختيار متجر أولاً");
+      return;
+    }
     toast.info("جاري التصفير...");
-    // Backup XLSX first (auto)
+    // Backup XLSX first (auto) — `orders`/`items` state is already scoped to current store.
     const today = new Date().toISOString().slice(0, 10);
     try {
       exportOrdersToExcel(orders, items, `fresh-backup-${today}.xlsx`);
@@ -539,11 +543,12 @@ const Admin = () => {
       console.error(e);
     }
 
-    // Try to archive all non-archived orders
+    // Archive only non-archived orders for the current store
     const { data: ordersToArchive, error: fetchError } = await supabase
       .from("orders")
       .select("id")
-      .is("archived_at", null);
+      .is("archived_at", null)
+      .eq("store_id", effectiveStoreId);
 
     if (fetchError) {
       toast.error("فشل جلب الطلبات: " + fetchError.message);
@@ -560,7 +565,8 @@ const Admin = () => {
     const { error } = await supabase
       .from("orders")
       .update({ archived_at: new Date().toISOString() })
-      .in("id", ids);
+      .in("id", ids)
+      .eq("store_id", effectiveStoreId);
 
     if (error) {
       toast.error("فشل التصفير: " + error.message);
