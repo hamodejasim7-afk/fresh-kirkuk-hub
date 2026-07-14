@@ -536,7 +536,7 @@ ${itemsList}
                           <Label htmlFor="zone" className="flex items-center gap-1"><Truck className="h-4 w-4" /> منطقة التوصيل</Label>
                           <Select value={selectedZoneId} onValueChange={setSelectedZoneId}>
                             <SelectTrigger id="zone">
-                              <SelectValue placeholder={`اختر منطقتك (الافتراضي ${formatIQD(DELIVERY_FEE_IQD)})`} />
+                              <SelectValue placeholder={deliveryZones.length ? "اختر منطقتك" : "لا توجد مناطق توصيل مضافة"} />
                             </SelectTrigger>
                             <SelectContent>
                               {deliveryZones.map((z) => (
@@ -551,8 +551,8 @@ ${itemsList}
                               سعر التوصيل: <span className="font-semibold text-foreground">{formatIQD(selectedZone.price_iqd)}</span>
                             </p>
                           ) : (
-                            <p className="text-xs text-muted-foreground">
-                              إذا لم تكن منطقتك مدرجة، سيتم استخدام السعر الافتراضي {formatIQD(DELIVERY_FEE_IQD)}.
+                            <p className="text-xs text-destructive">
+                              يرجى اختيار منطقة التوصيل لإتمام الطلب.
                             </p>
                           )}
                         </div>
