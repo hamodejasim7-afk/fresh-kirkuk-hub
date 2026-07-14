@@ -767,7 +767,6 @@ const Admin = () => {
               </div>
             </div>
             <PushNotificationsToggle />
-            </div>
           </Card>
         )}
 
