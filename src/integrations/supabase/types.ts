@@ -111,6 +111,7 @@ export type Database = {
           name: string
           sort_order: number | null
           store_id: string
+          updated_at: string
         }
         Insert: {
           created_at?: string | null
@@ -120,6 +121,7 @@ export type Database = {
           name: string
           sort_order?: number | null
           store_id: string
+          updated_at?: string
         }
         Update: {
           created_at?: string | null
@@ -129,6 +131,7 @@ export type Database = {
           name?: string
           sort_order?: number | null
           store_id?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -653,6 +656,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_accountant: { Args: { _user_id: string }; Returns: boolean }
+      is_recent_new_order: { Args: { _order_id: string }; Returns: boolean }
       is_store_admin_of: { Args: { _store: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
     }
