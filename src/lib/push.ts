@@ -53,19 +53,21 @@ export async function subscribeToPush(opts: {
   if (!sub) {
     sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY).buffer as ArrayBuffer,
     });
   }
 
   const payload = sub.toJSON();
   const { error } = await supabase.from("push_subscriptions").upsert(
-    {
-      user_id: opts.userId,
-      store_id: opts.storeId,
-      endpoint: sub.endpoint,
-      subscription: payload as unknown as Record<string, unknown>,
-      user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
-    },
+    [
+      {
+        user_id: opts.userId,
+        store_id: opts.storeId,
+        endpoint: sub.endpoint,
+        subscription: payload as unknown as Record<string, unknown>,
+        user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+      },
+    ],
     { onConflict: "endpoint" },
   );
   if (error) throw error;
