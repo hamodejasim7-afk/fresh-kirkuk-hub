@@ -62,7 +62,7 @@ const Index = () => {
   const [trackLoading, setTrackLoading] = useState(false);
   const [qtyInputs, setQtyInputs] = useState<Record<string, string>>({});
   const [selectedZoneId, setSelectedZoneId] = useState<string>("");
-  const { zones: deliveryZones } = useDeliveryZones({ onlyActive: true });
+  const { zones: deliveryZones } = useDeliveryZones({ onlyActive: true, storeId });
   const selectedZone = deliveryZones.find((z) => z.id === selectedZoneId) ?? null;
 
   const formatQty = (q: number) =>
