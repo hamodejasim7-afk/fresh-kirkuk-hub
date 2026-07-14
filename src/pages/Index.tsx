@@ -386,13 +386,31 @@ ${itemsList}
 
   const reorder = () => {
     if (!lastOrder.length) return;
-    const updated = lastOrder.map((item) => {
-      const currentProduct = products.find((p) => p.id === item.id);
-      return currentProduct ? { ...currentProduct, qty: item.qty } : item;
-    });
-    setCart(updated);
+    // Match by id first (same store), then fall back to name within current store.
+    // Always use the current store's product data (price, unit, availability).
+    const matched: CartItem[] = [];
+    const missing: string[] = [];
+    for (const item of lastOrder) {
+      const current =
+        products.find((p) => p.id === item.id) ??
+        products.find((p) => p.name.trim() === item.name.trim());
+      if (current) {
+        matched.push({ ...current, qty: item.qty } as CartItem);
+      } else {
+        missing.push(item.name);
+      }
+    }
+    if (!matched.length) {
+      toast.error("لا تتوفر منتجات الطلب السابق في هذا المتجر");
+      return;
+    }
+    setCart(matched);
     setCartOpen(true);
-    toast.success("تمت إضافة الطلب السابق للسلة ✓", { position: "bottom-right" });
+    if (missing.length) {
+      toast.warning(`بعض المنتجات غير متوفرة في هذا المتجر: ${missing.join("، ")}`);
+    } else {
+      toast.success("تمت إضافة الطلب السابق للسلة ✓", { position: "bottom-right" });
+    }
   };
 
   if (storeLoading) {
