@@ -766,6 +766,8 @@ const Admin = () => {
                 <NotificationPermissionRow inline />
               </div>
             </div>
+            <PushNotificationsToggle />
+            </div>
           </Card>
         )}
 
