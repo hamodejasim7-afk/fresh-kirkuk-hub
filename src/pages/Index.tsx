@@ -28,7 +28,7 @@ import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { useProducts, type DBProduct } from "@/hooks/useProducts";
 import { orderCustomerSchema } from "@/lib/orderValidation";
 import { useCategories } from "@/hooks/useCategories";
-import { DELIVERY_FEE_IQD } from "@/lib/constants";
+
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useDeliveryZones } from "@/hooks/useDeliveryZones";
@@ -62,7 +62,7 @@ const Index = () => {
   const [trackLoading, setTrackLoading] = useState(false);
   const [qtyInputs, setQtyInputs] = useState<Record<string, string>>({});
   const [selectedZoneId, setSelectedZoneId] = useState<string>("");
-  const { zones: deliveryZones } = useDeliveryZones({ onlyActive: true });
+  const { zones: deliveryZones } = useDeliveryZones({ onlyActive: true, storeId });
   const selectedZone = deliveryZones.find((z) => z.id === selectedZoneId) ?? null;
 
   const formatQty = (q: number) =>
@@ -158,7 +158,7 @@ const Index = () => {
 
   const totalQty = cart.reduce((s, i) => s + i.qty, 0);
   const subtotal = cart.reduce((s, i) => s + i.qty * i.price_iqd, 0);
-  const deliveryFee = cart.length > 0 ? (selectedZone ? selectedZone.price_iqd : DELIVERY_FEE_IQD) : 0;
+  const deliveryFee = cart.length > 0 && selectedZone ? selectedZone.price_iqd : 0;
   const totalPrice = subtotal + deliveryFee;
 
   const cartMap = useMemo(
@@ -263,6 +263,10 @@ ${itemsList}
       toast.error("السلة فارغة");
       return;
     }
+    if (!selectedZone) {
+      toast.error("يرجى اختيار منطقة التوصيل");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -278,8 +282,8 @@ ${itemsList}
           notes: validatedCustomer.notes || null,
           total_iqd: totalPrice,
           delivery_fee_iqd: deliveryFee,
-          delivery_zone_id: selectedZone?.id ?? null,
-          delivery_zone_name: selectedZone?.name ?? null,
+          delivery_area_id: selectedZone.id,
+          delivery_zone_name: selectedZone.name,
           status: "new",
           store_id: storeId,
         } as any);
@@ -536,7 +540,7 @@ ${itemsList}
                           <Label htmlFor="zone" className="flex items-center gap-1"><Truck className="h-4 w-4" /> منطقة التوصيل</Label>
                           <Select value={selectedZoneId} onValueChange={setSelectedZoneId}>
                             <SelectTrigger id="zone">
-                              <SelectValue placeholder={`اختر منطقتك (الافتراضي ${formatIQD(DELIVERY_FEE_IQD)})`} />
+                              <SelectValue placeholder={deliveryZones.length ? "اختر منطقتك" : "لا توجد مناطق توصيل مضافة"} />
                             </SelectTrigger>
                             <SelectContent>
                               {deliveryZones.map((z) => (
@@ -551,8 +555,8 @@ ${itemsList}
                               سعر التوصيل: <span className="font-semibold text-foreground">{formatIQD(selectedZone.price_iqd)}</span>
                             </p>
                           ) : (
-                            <p className="text-xs text-muted-foreground">
-                              إذا لم تكن منطقتك مدرجة، سيتم استخدام السعر الافتراضي {formatIQD(DELIVERY_FEE_IQD)}.
+                            <p className="text-xs text-destructive">
+                              يرجى اختيار منطقة التوصيل لإتمام الطلب.
                             </p>
                           )}
                         </div>
