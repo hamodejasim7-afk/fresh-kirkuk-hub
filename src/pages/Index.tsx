@@ -38,7 +38,7 @@ type CartItem = DBProduct & { qty: number };
 const Index = () => {
   const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
-  const { settings: storeSettings, loading } = useStoreSettings();
+  const { loading } = useStoreSettings();
   const { currentStore, loading: storeLoading, openSelector } = useStore();
   const storeId = currentStore?.id ?? null;
   const { products } = useProducts({ onlyAvailable: true, storeId });
@@ -62,26 +62,44 @@ const Index = () => {
   const selectedZone = deliveryZones.find((z) => z.id === selectedZoneId) ?? null;
 
   const formatQty = (q: number) =>
-    q % 1 === 0 ? String(q) : q.toFixed(2).replace(/\.?0+$/, "");
+    q % 1 === 0 ? String(q) : q.toFixed(2).replace(/.?0+$/, "");
 
   const allCategories = useMemo(
     () => ["الكل", ...categories.map((c) => c.name)],
     [categories]
   );
 
-  // Load cart from localStorage
+  // Load cart from localStorage, scoped to the current store
   useEffect(() => {
+    if (!storeId) return;
     const saved = localStorage.getItem("fresh_cart");
-    if (saved) {
-      try { setCart(JSON.parse(saved)); } catch {}
-    }
-  }, []);
+    if (!saved) return;
+    try {
+      const parsed = JSON.parse(saved);
+      if (parsed && !Array.isArray(parsed) && parsed.store_id === storeId && Array.isArray(parsed.items)) {
+        setCart(parsed.items);
+      }
+    } catch {}
+    // Only restore once per store change; reset effect below handles switching.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeId]);
   useEffect(() => {
+    if (!storeId) return;
     const t = setTimeout(() => {
-      localStorage.setItem("fresh_cart", JSON.stringify(cart));
+      localStorage.setItem("fresh_cart", JSON.stringify({ store_id: storeId, items: cart }));
     }, 300);
     return () => clearTimeout(t);
-  }, [cart]);
+  }, [cart, storeId]);
+
+  // Reset cart/customer/zone/qty when the selected store changes.
+  useEffect(() => {
+    if (!storeId) return;
+    setCart([]);
+    setSelectedZoneId("");
+    setCustomer({ name: "", phone: "", address: "", notes: "" });
+    setQtyInputs({});
+    localStorage.removeItem("fresh_cart");
+  }, [storeId]);
 
   // Load last order scoped to current store. Ignore entries from other stores.
   useEffect(() => {
@@ -158,8 +176,7 @@ const Index = () => {
       supabase.removeChannel(channel);
       clearInterval(t);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, role]);
+  }, [user, role, navigate]);
 
   const filtered = useMemo(() => {
     let result = activeCat === "الكل"
@@ -232,7 +249,6 @@ const Index = () => {
       toast.error("المتجر مغلق حالياً، لا يمكن استلام الطلبات");
       return;
     }
-    if (!validateCustomer()) return;
     setConfirmOpen(true);
   };
 
@@ -557,6 +573,7 @@ ${itemsList}
                         className="w-full gap-2"
                         onClick={() => {
                           setCart([]);
+                          setQtyInputs({});
                           localStorage.removeItem("fresh_cart");
                           toast.success("تم تفريغ السلة ✓");
                         }}
