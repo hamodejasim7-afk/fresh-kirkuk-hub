@@ -296,7 +296,18 @@ export function StoresPanel() {
                     <Badge variant={STATUS_VARIANT[s.status] ?? "secondary"}>{STATUS_LABEL[s.status] ?? s.status}</Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={s.is_open ? "default" : "outline"}>{s.is_open ? "مفتوح" : "مغلق"}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={!!s.is_open}
+                        onCheckedChange={async (v) => {
+                          const { error } = await supabase.from("stores").update({ is_open: v }).eq("id", s.id);
+                          if (error) toast.error("فشل التحديث");
+                          else { toast.success(v ? "تم فتح المتجر" : "تم إغلاق المتجر"); load(); }
+                        }}
+                        aria-label="تبديل مفتوح/مغلق"
+                      />
+                      <Badge variant={s.is_open ? "default" : "outline"}>{s.is_open ? "مفتوح" : "مغلق"}</Badge>
+                    </div>
                   </TableCell>
                   <TableCell>{s.sort_order ?? 0}</TableCell>
                   <TableCell className="text-xs">{s.created_at ? new Date(s.created_at).toLocaleDateString("ar") : "—"}</TableCell>
