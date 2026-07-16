@@ -228,7 +228,7 @@ const Index = () => {
       toast.error("السلة فارغة");
       return;
     }
-    if (!storeSettings.is_open) {
+    if (!currentStore?.is_open) {
       toast.error("المتجر مغلق حالياً، لا يمكن استلام الطلبات");
       return;
     }
