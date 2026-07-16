@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 // Legacy role kept for backward compatibility with existing consumers
 // (ProtectedRoute, useStaffPermissions, existing panels). super_admin and
