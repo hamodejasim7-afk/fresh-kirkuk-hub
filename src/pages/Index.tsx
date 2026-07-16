@@ -267,16 +267,18 @@ ${itemsList}
     const validatedCustomer = validateCustomer();
     if (!validatedCustomer) return;
 
-    const { data: latestSettings } = await supabase
-      .from("store_settings")
-      .select("is_open")
-      .eq("id", true)
-      .maybeSingle();
+    if (currentStore?.id) {
+      const { data: latestStore } = await supabase
+        .from("stores")
+        .select("is_open, status")
+        .eq("id", currentStore.id)
+        .maybeSingle();
 
-    if (latestSettings && !latestSettings.is_open) {
-      toast.error("المتجر مغلق حالياً، لا يمكن استلام الطلبات");
-      setConfirmOpen(false);
-      return;
+      if (latestStore && (latestStore.status !== "active" || !latestStore.is_open)) {
+        toast.error("المتجر مغلق حالياً، لا يمكن استلام الطلبات");
+        setConfirmOpen(false);
+        return;
+      }
     }
     if (cart.length === 0) {
       toast.error("السلة فارغة");
