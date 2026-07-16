@@ -70,7 +70,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const nextRoles = ((roleRows ?? []).map((r: { role: string }) => r.role) as AppRole[]);
     const nextStoreId = (profile as { store_id: string | null } | null)?.store_id ?? null;
 
-    // Block store-scoped users when their store is inactive or closed.
+    // Block store-scoped users only when their store is inactive.
     // Super admins (no store_id, or super_admin role) are never blocked.
     const isSuper =
       nextRoles.includes("super_admin") ||
@@ -79,10 +79,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!isSuper && nextStoreId && nextRoles.length > 0) {
       const { data: store } = await supabase
         .from("stores")
-        .select("status, is_open")
+        .select("status")
         .eq("id", nextStoreId)
         .maybeSingle();
-      if (store && (store.status !== "active" || store.is_open === false)) {
+      if (store && store.status === "inactive") {
         toast.error("تم إيقاف متجرك مؤقتاً، يرجى التواصل مع المدير العام");
         await supabase.auth.signOut();
         setRoles([]);
