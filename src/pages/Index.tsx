@@ -698,12 +698,12 @@ ${itemsList}
       </Dialog>
 
       {/* Store closed banner */}
-      {!storeSettings.is_open && (
+      {currentStore && !currentStore.is_open && (
         <div className="bg-destructive text-destructive-foreground">
           <div className="container mx-auto flex items-center justify-center gap-3 px-4 py-3 text-center">
             <Clock className="h-5 w-5 flex-shrink-0 animate-pulse" />
             <p className="text-sm font-semibold sm:text-base">
-              {storeSettings.closed_message}
+              المتجر مغلق حالياً
             </p>
           </div>
         </div>
