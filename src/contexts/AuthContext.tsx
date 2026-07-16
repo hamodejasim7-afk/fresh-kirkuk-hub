@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 // Legacy role kept for backward compatibility with existing consumers
 // (ProtectedRoute, useStaffPermissions, existing panels). super_admin and
@@ -61,14 +62,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [storeId, setStoreId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUserMeta = async (userId: string) => {
+  const fetchUserMeta = async (userId: string): Promise<boolean> => {
     const [{ data: roleRows }, { data: profile }] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", userId),
       supabase.from("profiles").select("store_id").eq("id", userId).maybeSingle(),
     ]);
     const nextRoles = ((roleRows ?? []).map((r: { role: string }) => r.role) as AppRole[]);
+    const nextStoreId = (profile as { store_id: string | null } | null)?.store_id ?? null;
+
+    // Block store-scoped users when their store is inactive or closed.
+    // Super admins (no store_id, or super_admin role) are never blocked.
+    const isSuper =
+      nextRoles.includes("super_admin") ||
+      (nextRoles.includes("admin") && nextStoreId === null);
+
+    if (!isSuper && nextStoreId && nextRoles.length > 0) {
+      const { data: store } = await supabase
+        .from("stores")
+        .select("status, is_open")
+        .eq("id", nextStoreId)
+        .maybeSingle();
+      if (store && (store.status !== "active" || store.is_open === false)) {
+        toast.error("تم إيقاف متجرك مؤقتاً، يرجى التواصل مع المدير العام");
+        await supabase.auth.signOut();
+        setRoles([]);
+        setStoreId(null);
+        setSession(null);
+        setUser(null);
+        return false;
+      }
+    }
+
     setRoles(nextRoles);
-    setStoreId((profile as { store_id: string | null } | null)?.store_id ?? null);
+    setStoreId(nextStoreId);
+    return true;
   };
 
   useEffect(() => {

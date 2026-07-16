@@ -69,6 +69,17 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => { load(); }, [load]);
 
+  // Realtime: refresh stores list when any store row changes (is_open, status, etc.)
+  useEffect(() => {
+    const channel = supabase
+      .channel("stores-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "stores" }, () => {
+        load();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [load]);
+
   // Force the pinned store for store users (overrides any localStorage value).
   useEffect(() => {
     if (authLoading) return;

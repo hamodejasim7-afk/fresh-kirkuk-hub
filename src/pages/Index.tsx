@@ -228,7 +228,7 @@ const Index = () => {
       toast.error("السلة فارغة");
       return;
     }
-    if (!storeSettings.is_open) {
+    if (!currentStore?.is_open) {
       toast.error("المتجر مغلق حالياً، لا يمكن استلام الطلبات");
       return;
     }
@@ -267,16 +267,18 @@ ${itemsList}
     const validatedCustomer = validateCustomer();
     if (!validatedCustomer) return;
 
-    const { data: latestSettings } = await supabase
-      .from("store_settings")
-      .select("is_open")
-      .eq("id", true)
-      .maybeSingle();
+    if (currentStore?.id) {
+      const { data: latestStore } = await supabase
+        .from("stores")
+        .select("is_open, status")
+        .eq("id", currentStore.id)
+        .maybeSingle();
 
-    if (latestSettings && !latestSettings.is_open) {
-      toast.error("المتجر مغلق حالياً، لا يمكن استلام الطلبات");
-      setConfirmOpen(false);
-      return;
+      if (latestStore && (latestStore.status !== "active" || !latestStore.is_open)) {
+        toast.error("المتجر مغلق حالياً، لا يمكن استلام الطلبات");
+        setConfirmOpen(false);
+        return;
+      }
     }
     if (cart.length === 0) {
       toast.error("السلة فارغة");
@@ -628,11 +630,11 @@ ${itemsList}
                       onClick={openOrderConfirmation}
                       size="lg"
                       className="w-full"
-                      disabled={submitting || loading || !storeSettings.is_open}
+                      disabled={submitting || loading || storeLoading || !currentStore?.is_open}
                     >
-                      {loading
+                      {loading || storeLoading
                         ? "جاري التحقق..."
-                        : !storeSettings.is_open
+                        : !currentStore?.is_open
                         ? "المتجر مغلق حالياً"
                         : submitting
                         ? "جاري الإرسال..."
@@ -696,12 +698,12 @@ ${itemsList}
       </Dialog>
 
       {/* Store closed banner */}
-      {!storeSettings.is_open && (
+      {currentStore && !currentStore.is_open && (
         <div className="bg-destructive text-destructive-foreground">
           <div className="container mx-auto flex items-center justify-center gap-3 px-4 py-3 text-center">
             <Clock className="h-5 w-5 flex-shrink-0 animate-pulse" />
             <p className="text-sm font-semibold sm:text-base">
-              {storeSettings.closed_message}
+              المتجر مغلق حالياً
             </p>
           </div>
         </div>
