@@ -1682,7 +1682,7 @@ const StoreStatusCard = () => {
           </span>
           <Switch
             checked={isOpen}
-            disabled={loading || saving}
+            disabled={loading || saving || !currentStore}
             onCheckedChange={toggleStore}
             aria-label="تبديل حالة المتجر"
           />
