@@ -630,11 +630,11 @@ ${itemsList}
                       onClick={openOrderConfirmation}
                       size="lg"
                       className="w-full"
-                      disabled={submitting || loading || !storeSettings.is_open}
+                      disabled={submitting || loading || storeLoading || !currentStore?.is_open}
                     >
-                      {loading
+                      {loading || storeLoading
                         ? "جاري التحقق..."
-                        : !storeSettings.is_open
+                        : !currentStore?.is_open
                         ? "المتجر مغلق حالياً"
                         : submitting
                         ? "جاري الإرسال..."
