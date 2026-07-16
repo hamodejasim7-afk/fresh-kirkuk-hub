@@ -1605,6 +1605,7 @@ const StaffPanel = ({
 
 const StoreStatusCard = () => {
   const { settings, loading } = useStoreSettings();
+  const { currentStore, reload: reloadStores } = useStore();
   const [message, setMessage] = useState(settings.closed_message);
   const [saving, setSaving] = useState(false);
   const [editingMsg, setEditingMsg] = useState(false);
@@ -1614,16 +1615,21 @@ const StoreStatusCard = () => {
   }, [settings.closed_message, editingMsg]);
 
   const toggleStore = async (next: boolean) => {
+    if (!currentStore) {
+      toast.error("اختر متجراً أولاً");
+      return;
+    }
     setSaving(true);
     const { error } = await supabase
-      .from("store_settings")
+      .from("stores")
       .update({ is_open: next })
-      .eq("id", true);
+      .eq("id", currentStore.id);
     setSaving(false);
     if (error) {
       toast.error("فشل تحديث حالة المتجر: " + error.message);
     } else {
       toast.success(next ? "تم فتح المتجر ✅" : "تم إغلاق المتجر 🔒");
+      reloadStores();
     }
   };
 
