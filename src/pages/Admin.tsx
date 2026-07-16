@@ -1648,7 +1648,7 @@ const StoreStatusCard = () => {
     }
   };
 
-  const isOpen = settings.is_open;
+  const isOpen = !!currentStore?.is_open;
 
   return (
     <Card
